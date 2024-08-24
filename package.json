@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "three": "^0.167.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.1"
+  },
+  "scripts": {
+  "dev": "vite"
+}
+
+}

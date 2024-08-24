@@ -1,0 +1,9 @@
+{
+    "editor.codeLens": true,
+    "javascript.referencesCodeLens.enabled": true,
+    "typescript.referencesCodeLens.enabled": true,
+    "javascript.referencesCodeLens.showOnAllFunctions": true,
+    "typescript.referencesCodeLens.showOnAllFunctions": true
+
+}
+  

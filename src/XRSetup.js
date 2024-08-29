@@ -1,8 +1,14 @@
 export async function createXRSession(trackedImages) {
     try {
+
+        const xrTrackedImages = trackedImages.map(item => ({
+            image: item.imageBitmap,
+            widthInMeters: item.widthInMeters
+        }));
+        
         const session = await navigator.xr.requestSession('immersive-ar', {
             requiredFeatures: ['image-tracking', 'dom-overlay'],
-            trackedImages: trackedImages,
+            trackedImages: xrTrackedImages,
             domOverlay: { root: document.body }
         });
         console.log("XR Session created.");

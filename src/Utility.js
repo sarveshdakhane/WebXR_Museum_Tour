@@ -13,7 +13,6 @@ export function FindDistance( userPosition, obstacle , camera )
     if (obstacle && camera) {
 
         const distance = calculateDistance(userPosition, obstacle.position);
-
         // Update color based on distance
         if (distance < safeDistance) {
             color = 0xFF0000;
@@ -38,29 +37,28 @@ export async function createXRImageBitmap( url) {
     }
 }
 
-export function PlaceObjectOnTarget(frame, referenceSpace, cube , cube1) {
-    const pose = frame.getViewerPose(referenceSpace);
-    const Meshes = [cube,cube1]; 
-    console.log("cube 1",cube);
-    console.log("cube 2",cube1);
-    console.log(Meshes);
+export function PlaceObjectOnTarget(frame, referenceSpace,trackedImages) {
 
+    const pose = frame.getViewerPose(referenceSpace);
 
     if (pose) {
 
         const results = frame.getImageTrackingResults();
-        console.log(results.length);
+          results.forEach((result,index) => { 
 
+           const trackedImageIndex = trackedImages.find(item => item.index === result.index);
 
-
-        results.forEach((result, index) => {
-
-            const MeshDObject = Meshes[index];
-
-            console.log(`Processing result for image index: ${index}`);
+          if (!trackedImageIndex) {
+               console.warn("No matching tracked image found for this result.");
+               return;
+              }
+                 
+            const MeshDObject = trackedImageIndex.mesh;
 
             if (result.trackingState === 'tracked') {
+
                 const imagePose = frame.getPose(result.imageSpace, referenceSpace);
+
                 if (imagePose) {
                     console.log("Tracked image is visible and being processed.");
                     const position = imagePose.transform.position;
@@ -69,7 +67,6 @@ export function PlaceObjectOnTarget(frame, referenceSpace, cube , cube1) {
                     MeshDObject.position.set(position.x, position.y, position.z);
                     MeshDObject.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
                     MeshDObject.visible = true;
-
 
                 } else {
                     console.warn("Pose could not be obtained for the tracked image.");

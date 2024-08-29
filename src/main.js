@@ -59,16 +59,18 @@ async function startXR() {
         return;
     }
     try {
-        const trackedImages = await setupImageTracking();
+
+        const trackedImages =  await setupImageTracking();
+
         session = await createXRSession(trackedImages);
         console.log("Immersive AR session started.");
 
         referenceSpace = await setupReferenceSpace(session);
 
-        const { renderer, scene, camera, cube, obstacle } = setupThreeJS();
+        const { renderer, scene, camera, cube, obstacle, cube1} = setupThreeJS();
 
         renderer.xr.setAnimationLoop((time, frame) => {
-            onXRFrame(time, frame, renderer, referenceSpace, scene, camera, cube, trackedImages, obstacle);
+            onXRFrame(time, frame, renderer, referenceSpace, scene, camera, cube, trackedImages, obstacle , cube1);
         });
 
         console.log("XRFrame loop initiated.");
@@ -78,12 +80,25 @@ async function startXR() {
 }
 
 async function setupImageTracking() {
-    const imageBitmap = await createXRImageBitmap();
+
+    const url1 = 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg';
+    const url2='QR.png';
+
+
+    
+
+    const imageBitmap1 = await createXRImageBitmap(url1);
+    const imageBitmap2 = await createXRImageBitmap(url2);
+
     console.log("ImageBitmap created from 'earth-flat.jpg'.");
 
     return [
         {
-            image: imageBitmap,
+            image: imageBitmap1,
+            widthInMeters: 0.5
+        },
+        {
+            image: imageBitmap2,
             widthInMeters: 0.5
         }
     ];
@@ -119,14 +134,21 @@ function setupThreeJS() {
     cube.visible = false;
     scene.add(cube);
 
-    return { renderer, scene, camera, cube, obstacle };
+    const geometry1 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const material1 = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
+    const cube1 = new THREE.Mesh(geometry1, material1);
+    cube.visible = false;
+    scene.add(cube1);
+
+
+    return { renderer, scene, camera, cube, obstacle ,  cube1 };
 }
 
-function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, cube, trackedImages, obstacle) {
+function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, cube, trackedImages, obstacle , cube1) {
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
     FindDistance(userPosition, obstacle, camera);
-    PlaceObjectOnTarget(frame, referenceSpace, trackedImages, cube);
+    PlaceObjectOnTarget(frame, referenceSpace, cube, cube1);
 
     renderer.render(scene, camera);
 }

@@ -24,8 +24,7 @@ export function FindDistance( userPosition, obstacle , camera )
     }
 }
 
-export async function createXRImageBitmap() {
-    const url = 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg';
+export async function createXRImageBitmap( url) {
     try {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -39,12 +38,26 @@ export async function createXRImageBitmap() {
     }
 }
 
-export function PlaceObjectOnTarget(frame, referenceSpace, trackedImages, cube) {
+export function PlaceObjectOnTarget(frame, referenceSpace, cube , cube1) {
     const pose = frame.getViewerPose(referenceSpace);
-    
+    const Meshes = [cube,cube1]; 
+    console.log("cube 1",cube);
+    console.log("cube 2",cube1);
+    console.log(Meshes);
+
+
     if (pose) {
-        const results = frame.getImageTrackingResults(trackedImages);
-        results.forEach((result) => {
+
+        const results = frame.getImageTrackingResults();
+        console.log(results.length);
+
+
+
+        results.forEach((result, index) => {
+
+            const MeshDObject = Meshes[index];
+
+            console.log(`Processing result for image index: ${index}`);
 
             if (result.trackingState === 'tracked') {
                 const imagePose = frame.getPose(result.imageSpace, referenceSpace);
@@ -53,16 +66,18 @@ export function PlaceObjectOnTarget(frame, referenceSpace, trackedImages, cube) 
                     const position = imagePose.transform.position;
                     const orientation = imagePose.transform.orientation;
 
-                    cube.position.set(position.x, position.y, position.z);
-                    cube.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
-                    cube.visible = true;
+                    MeshDObject.position.set(position.x, position.y, position.z);
+                    MeshDObject.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
+                    MeshDObject.visible = true;
+
+
                 } else {
                     console.warn("Pose could not be obtained for the tracked image.");
-                    cube.visible = false;
+                    MeshDObject.visible = false;
                 }
             } else {
                 console.log("Image is not tracked. Hiding the cube.");
-                cube.visible = false;
+                MeshDObject.visible = false;
             }
         });
     } else {

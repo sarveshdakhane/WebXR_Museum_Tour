@@ -64,8 +64,8 @@ export function PlaceObjectOnTarget(frame, referenceSpace,trackedImages) {
                     const position = imagePose.transform.position;
                     const orientation = imagePose.transform.orientation;
 
-                    MeshDObject.position.set(position.x, position.y, position.z);
-                    MeshDObject.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
+                    MeshDObject.position.set(position.x, position.y - 0.3, position.z);
+                    //MeshDObject.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
                     MeshDObject.visible = true;
 
                 } else {

@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { RoomSpatialAudio } from './SpatialAudio.js';
+
+
 
 let session = null;
 let referenceSpace = null;
@@ -51,12 +54,11 @@ const material1 = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
 //cube1.visible = false;
 
 
-
-
-//Handle Audio
-
-
-
+//Handle Log
+function logMessage(message) {
+    const logContainer = document.getElementById('logContainer');
+    logContainer.innerHTML = message;
+}
 
 
 async function onStartButtonClick() {
@@ -68,7 +70,7 @@ async function onStartButtonClick() {
 function onExitButtonClick() {
     console.log("Exit AR button clicked.");
     if (session) {
-        
+
         session.end();
         toggleButtons(false); // Enable start button and disable exit button
     }
@@ -110,12 +112,9 @@ async function startXR() {
     }
     try {
 
-        const audio = new Audio('A.mp3');
 
-        audio.play().catch(error => {
-            console.error('Error playing audio:', error);
-        });
-
+        const audioContext = new AudioContext();
+        const roomSpatialAudio = new RoomSpatialAudio(audioContext, 'A.mp3', obstaclePosition );        
         const trackedImages = await setupImageTracking();
 
         session = await createXRSession(trackedImages);
@@ -125,8 +124,39 @@ async function startXR() {
 
         const { renderer, scene, camera, obstacle } = setupThreeJS();
 
+
+ 
+
+        
+
+        
+
         renderer.xr.setAnimationLoop((time, frame) => {
+
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages);
+            const userPosition1 = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+            const resultString = `x: ${userPosition1.x}, y: ${userPosition1.y}, z: ${userPosition1.z}`;
+            roomSpatialAudio.updateListenerPosition(userPosition1.x, userPosition1.y, userPosition1.z,camera);
+
+
+            //camera direction logic
+            const cameraDirection = camera.getWorldDirection(new THREE.Vector3());
+            const meshPosition =   obstacle.position;
+            const cameraPosition = camera.position;
+            const directionToMesh = meshPosition.clone().sub(cameraPosition).normalize();
+
+            const dotProduct = cameraDirection.dot(directionToMesh);
+
+            if (dotProduct > 0.9) {
+                logMessage("Camera is facing the mesh");
+            } else {
+                logMessage("Camera is not facing the mesh");
+            }
+
+
+
+
+
         });
 
         console.log("XRFrame loop initiated.");
@@ -160,6 +190,32 @@ async function setupImageTracking() {
     return imageTrackables;
 }
 
+// Function to handle AR object click (selectstart event)
+async function onSelectStart(event,raycaster,controller,renderer) {
+
+    const controllerPose = frame.getPose(
+        controller.gripSpace || controller.targetRaySpace,
+        renderer.xr.getReferenceSpace()
+    );
+
+    if (controllerPose) {
+        // Set the raycaster from the controller's position and direction
+        const origin = new THREE.Vector3().fromArray(controllerPose.transform.position);
+        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(
+            new THREE.Quaternion().fromArray(controllerPose.transform.orientation)
+        );
+
+        raycaster.set(origin, direction);
+
+        const intersects = raycaster.intersectObject(cube1);
+
+        if (intersects.length > 0) {
+            console.log('hit'); // Print "hit" when the object is clicked
+        }
+    }
+    
+}
+
 
 function setupThreeJS() {
     const scene = new THREE.Scene();
@@ -179,9 +235,18 @@ function setupThreeJS() {
     renderer.xr.setReferenceSpaceType('local');
     renderer.xr.setSession(session);
 
+    // Raycaster for detecting clicks
+    const raycaster = new THREE.Raycaster();
+    
+    // Create a controller for detecting the user's interactions (e.g., tapping)
+    const controller = renderer.xr.getController(0);
+    controller.addEventListener('selectstart', function (event) {
+        onSelectStart(event, raycaster,controller,renderer);
+    });
     scene.add(obstacle);
     scene.add(cube);
     scene.add(cube1);
+    scene.add(controller);
 
 
     return { renderer, scene, camera, obstacle };

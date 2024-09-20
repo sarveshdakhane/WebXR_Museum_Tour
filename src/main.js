@@ -36,8 +36,6 @@ objLoader.load(
 )
 //cube1.visible = false;
 
-
-
 const Ogeometry = new THREE.BoxGeometry(0.5, 0.4, 0.1);
 const Omaterial = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
 const obstacle = new THREE.Mesh(Ogeometry, Omaterial);
@@ -112,9 +110,8 @@ async function startXR() {
     }
     try {
 
-
         const audioContext = new AudioContext();
-        const roomSpatialAudio = new RoomSpatialAudio(audioContext, 'A.mp3', obstaclePosition );        
+        const roomSpatialAudio = new RoomSpatialAudio(audioContext, 'Audio/A.mp3', obstaclePosition );        
         const trackedImages = await setupImageTracking();
 
         session = await createXRSession(trackedImages);
@@ -123,10 +120,6 @@ async function startXR() {
         referenceSpace = await setupReferenceSpace(session);
 
         const { renderer, scene, camera, obstacle } = setupThreeJS();
-
-
- 
-
         
 
         
@@ -135,9 +128,8 @@ async function startXR() {
 
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages);
             const userPosition1 = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
-            const resultString = `x: ${userPosition1.x}, y: ${userPosition1.y}, z: ${userPosition1.z}`;
-            roomSpatialAudio.updateListenerPosition(userPosition1.x, userPosition1.y, userPosition1.z,camera);
 
+            roomSpatialAudio.updateListenerPosition(userPosition1.x, userPosition1.y, userPosition1.z,camera);
 
             //camera direction logic
             const cameraDirection = camera.getWorldDirection(new THREE.Vector3());
@@ -153,10 +145,6 @@ async function startXR() {
                 logMessage("Camera is not facing the mesh");
             }
 
-
-
-
-
         });
 
         console.log("XRFrame loop initiated.");
@@ -169,7 +157,7 @@ async function setupImageTracking() {
 
     const trackedImages = [
         { index: 0, url: 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg', mesh: cube, widthInMeters: 0.5 },
-        { index: 1, url: 'QR.png', mesh: cube1, widthInMeters: 0.5 }
+        { index: 1, url: 'Images/QR.png', mesh: cube1, widthInMeters: 0.5 }
 
     ];
     const imageTrackables = [];
@@ -190,31 +178,28 @@ async function setupImageTracking() {
     return imageTrackables;
 }
 
-// Function to handle AR object click (selectstart event)
-async function onSelectStart(event,raycaster,controller,renderer) {
+// Function to handle AR object click (touchstart event)
+function onTouchStart(event, raycaster, camera) {
+ 
+    // Get touch position on screen
+    const touch = event.touches[0];
 
-    const controllerPose = frame.getPose(
-        controller.gripSpace || controller.targetRaySpace,
-        renderer.xr.getReferenceSpace()
-    );
+    // Calculate normalized device coordinates (NDC)
+    const touchX = (touch.clientX / window.innerWidth) * 2 - 1;
+    const touchY = -(touch.clientY / window.innerHeight) * 2 + 1;
 
-    if (controllerPose) {
-        // Set the raycaster from the controller's position and direction
-        const origin = new THREE.Vector3().fromArray(controllerPose.transform.position);
-        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(
-            new THREE.Quaternion().fromArray(controllerPose.transform.orientation)
-        );
+    // Set up raycaster from the touch position
+    raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
-        raycaster.set(origin, direction);
+    // Check for intersections with cube1
+    const intersects = raycaster.intersectObject(obstacle);
 
-        const intersects = raycaster.intersectObject(cube1);
-
-        if (intersects.length > 0) {
-            console.log('hit'); // Print "hit" when the object is clicked
-        }
+    if (intersects.length > 0) {
+        console.log('hit'); // Print "hit" when the object is touched
+        event.preventDefault();
     }
-    
 }
+
 
 
 function setupThreeJS() {
@@ -240,9 +225,12 @@ function setupThreeJS() {
     
     // Create a controller for detecting the user's interactions (e.g., tapping)
     const controller = renderer.xr.getController(0);
-    controller.addEventListener('selectstart', function (event) {
-        onSelectStart(event, raycaster,controller,renderer);
-    });
+
+      // Add the `touchstart` event listener to detect screen taps with passive: false
+      window.addEventListener('touchstart', function (event) {
+        onTouchStart(event, raycaster, camera);
+    }, { passive: false }); 
+
     scene.add(obstacle);
     scene.add(cube);
     scene.add(cube1);

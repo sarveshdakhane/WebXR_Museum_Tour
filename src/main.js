@@ -3,53 +3,31 @@ import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance } from './Utilit
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { RoomSpatialAudio } from './SpatialAudio.js';
-
+import { SceneMeshes } from './MeshesClass.js';
 
 
 let session = null;
 let referenceSpace = null;
 const obstaclePosition = new THREE.Vector3(0, 0, -1.8);
-let color = 'green';
 
 document.getElementById('startButton').addEventListener('click', onStartButtonClick);
 document.getElementById('exitButton').addEventListener('click', onExitButtonClick);
 
-//Create all the meshes here
-
-const objLoader = new OBJLoader();
-    
-let cube1 ;
 
 
-objLoader.load(
-'Statue/12338_Statue_v1_L3.obj',
-(object) => {
-    
-    cube1 = object;
-    // Adjust the position, scale, and rotation as necessary
-    cube1.position.set(0, 0, -3);
-    cube1.scale.set(0.005, 0.005, 0.005);
-    cube1.rotation.set(0, -40,0);
-    cube1.visible=false;
+// Create Scene Meshes
+const Meshes = new SceneMeshes();
+const obstacle = Meshes.createObstacle(obstaclePosition);
+const cube = Meshes.createCube();
 
-},
-)
-//cube1.visible = false;
-
-const Ogeometry = new THREE.BoxGeometry(0.5, 0.4, 0.1);
-const Omaterial = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
-const obstacle = new THREE.Mesh(Ogeometry, Omaterial);
-obstacle.position.copy(obstaclePosition);
-
-const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
-const cube = new THREE.Mesh(geometry, material);
-cube.visible = false;
-
-const geometry1 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-const material1 = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
-//const cube1 = new THREE.Mesh(geometry1, material1);
-//cube1.visible = false;
+let  SculptureMesh;
+Meshes.loadSculptureModel('Statue/12338_Statue_v1_L3.obj')
+    .then((Mesh) => {
+        SculptureMesh= Mesh;
+    })
+    .catch((error) => {
+        console.error('Error loading sculpture:', error);
+    });
 
 
 //Handle Log
@@ -68,7 +46,6 @@ async function onStartButtonClick() {
 function onExitButtonClick() {
     console.log("Exit AR button clicked.");
     if (session) {
-
         session.end();
         toggleButtons(false); // Enable start button and disable exit button
     }
@@ -157,7 +134,7 @@ async function setupImageTracking() {
 
     const trackedImages = [
         { index: 0, url: 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg', mesh: cube, widthInMeters: 0.5 },
-        { index: 1, url: 'Images/QR.png', mesh: cube1, widthInMeters: 0.5 }
+        { index: 1, url: 'Images/QR.png', mesh: SculptureMesh, widthInMeters: 0.5 }
 
     ];
     const imageTrackables = [];
@@ -191,7 +168,7 @@ function onTouchStart(event, raycaster, camera) {
     // Set up raycaster from the touch position
     raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
-    // Check for intersections with cube1
+    // Check for intersections with SculptureMesh
     const intersects = raycaster.intersectObject(obstacle);
 
     if (intersects.length > 0) {
@@ -233,7 +210,7 @@ function setupThreeJS() {
 
     scene.add(obstacle);
     scene.add(cube);
-    scene.add(cube1);
+    scene.add(SculptureMesh);
     scene.add(controller);
 
 

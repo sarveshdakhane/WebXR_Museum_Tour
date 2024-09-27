@@ -21,13 +21,20 @@ const obstacle = Meshes.createObstacle(obstaclePosition);
 const cube = Meshes.createCube();
 
 let  SculptureMesh;
-Meshes.loadSculptureModel('Statue/12338_Statue_v1_L3.obj')
+
+try {
+    Meshes.loadSculptureModel('Statue/12338_Statue_v1_L3.obj')
     .then((Mesh) => {
         SculptureMesh= Mesh;
     })
     .catch((error) => {
         console.error('Error loading sculpture:', error);
     });
+
+    
+} catch (error) {
+    console.log(error);
+}
 
 
 //Handle Log

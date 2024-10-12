@@ -2,31 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="data:," />
-    <title>WebXR AR Session</title>
+    <title>Siegerlandmuseum AR Tour</title>
     <link rel="stylesheet" href="src/CSS/main.css">
-
 </head>
 <body>
-    <!-- Menu Icon -->
-    <span id="menuIcon">&#9776;</span>
+    <header id="header">
+    </header>
 
-    <!-- Side Menu -->
-    <div id="sideMenu">
-        <a href="#" id="optionABC">ABC</a>
-        <a href="#" id="optionXYZ">XYZ</a>
+    <div id="titleContainer">
+        <span id="menuIcon">&#9776;</span>
+        <img src="https://siegerlandmuseum.de/wp-content/uploads/2016/02/logo.jpg" alt="Siegerlandmuseum im Oberen Schloss" id="museumLogo">
+        <div id="mainScreen">
+            <h1>Welcome to Siegerlandmuseum AR Experience</h1>
+            <p>Immerse yourself in the rich history of Siegerland as you explore our exhibitions using Augmented Reality.</p>
+            <p>Click <strong>Start AR</strong> to begin your virtual museum tour.</p>
+        </div>
     </div>
 
     <!-- Buttons Container -->
     <div id="buttonContainer">
-        <button id="startButton">Start AR</button>
-        <button id="exitButton">Stop AR</button>
-        <div id="logContainer" style="margin-left: 10px; color: white; font-size: 14px;"></div>
-       </div>
+        <button id="arButton">Start AR</button>
+        <div id="logContainer" style="margin-left: 10px; color: black; font-size: 14px;"></div>
+    </div>
+
+    <!-- Move Side Menu here so it's on top of everything else -->
+    <div id="sideMenu">
+        <a href="#" id="homeLink">Home</a>
+        <a href="#" id="aboutLink">About the Museum</a>
+        <a href="#" id="tourLink">AR Tour</a>
+        <a href="#" id="exhibitionsLink">Exhibitions</a>
+        <a href="#" id="visitInfoLink">Visitor Information</a>
+        <a href="#" id="contactLink">Contact</a>
+        <a href="#" id="supportLink">Support Us</a>
+    </div>
 
     <script type="module" src="src/main.js"></script>
     <script type="module" src="src/index.js"></script>
 </body>
 </html>
- 

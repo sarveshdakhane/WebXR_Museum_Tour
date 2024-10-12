@@ -5,14 +5,15 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { RoomSpatialAudio } from './SpatialAudio.js';
 import { SceneMeshes } from './MeshesClass.js';
 
-
+//Global Object Declaration
 let session = null;
 let referenceSpace = null;
-const obstaclePosition = new THREE.Vector3(0, 0, -1.8);
+let obstaclePosition = new THREE.Vector3(0, 0, -1.8);
+let audioContext;
+let roomSpatialAudio;        
+let trackedImages;
 
-document.getElementById('startButton').addEventListener('click', onStartButtonClick);
-document.getElementById('exitButton').addEventListener('click', onExitButtonClick);
-
+document.getElementById('arButton').addEventListener('click', onARButtonClick);
 
 
 // Create Scene Meshes
@@ -43,33 +44,19 @@ function logMessage(message) {
     logContainer.innerHTML = message;
 }
 
+async function onARButtonClick() {
+    const arButton = document.getElementById('arButton');
 
-async function onStartButtonClick() {
-    console.log("Start AR button clicked.");
-    await startXR();
-    toggleButtons(true); // Disable start button and enable exit button
-}
-
-function onExitButtonClick() {
-    console.log("Exit AR button clicked.");
-    if (session) {
-        session.end();
-        toggleButtons(false); // Enable start button and disable exit button
-    }
-}
-
-function toggleButtons(isSessionActive) {
-    const startButton = document.getElementById('startButton');
-    const exitButton = document.getElementById('exitButton');
-
-    if (isSessionActive) {
-        startButton.disabled = true;
-        startButton.style.display = 'none';
-        exitButton.style.display = 'block';
+    if (arButton.textContent === "Start AR") {
+        console.log("Start AR button clicked.");
+        await startXR();
+        arButton.textContent = "Stop AR"; // Switch to Stop
     } else {
-        startButton.disabled = false;
-        startButton.style.display = 'block';
-        exitButton.style.display = 'none';
+        console.log("Stop AR button clicked.");
+        if (session) {
+            session.end();
+            arButton.textContent = "Start AR"; // Switch back to Start
+        }
     }
 }
 
@@ -81,7 +68,13 @@ async function init() {
             console.error("WebXR not supported.");
             return false;
         }
-        return true;
+        
+        // All Scene object intialization        
+         audioContext = new AudioContext();
+         roomSpatialAudio = new RoomSpatialAudio(audioContext, 'Audio/A.mp3', obstaclePosition );        
+         trackedImages = await setupImageTracking();
+         return true;
+
     } catch (error) {
         console.error("An error occurred:", error);
         return false;
@@ -93,27 +86,20 @@ async function startXR() {
         return;
     }
     try {
-
-        const audioContext = new AudioContext();
-        const roomSpatialAudio = new RoomSpatialAudio(audioContext, 'Audio/A.mp3', obstaclePosition );        
-        const trackedImages = await setupImageTracking();
-
-        session = await createXRSession(trackedImages);
-        console.log("Immersive AR session started.");
+     
+        session = await createXRSession(trackedImages);    
 
         referenceSpace = await setupReferenceSpace(session);
 
-        const { renderer, scene, camera, obstacle } = setupThreeJS();
-        
+        console.log("Immersive AR session started.");
 
+        const { renderer, scene, camera, obstacle } = setupThreeJS(); 
         
+        console.log("ThreeJS initialized");
 
         renderer.xr.setAnimationLoop((time, frame) => {
 
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages);
-            const userPosition1 = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
-
-            roomSpatialAudio.updateListenerPosition(userPosition1.x, userPosition1.y, userPosition1.z,camera);
 
             //camera direction logic
             const cameraDirection = camera.getWorldDirection(new THREE.Vector3());
@@ -128,6 +114,7 @@ async function startXR() {
             } else {
                 logMessage("Camera is not facing the mesh");
             }
+
 
         });
 
@@ -165,26 +152,20 @@ async function setupImageTracking() {
 // Function to handle AR object click (touchstart event)
 function onTouchStart(event, raycaster, camera) {
  
-    // Get touch position on screen
     const touch = event.touches[0];
-
-    // Calculate normalized device coordinates (NDC)
     const touchX = (touch.clientX / window.innerWidth) * 2 - 1;
     const touchY = -(touch.clientY / window.innerHeight) * 2 + 1;
 
-    // Set up raycaster from the touch position
     raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
     // Check for intersections with SculptureMesh
     const intersects = raycaster.intersectObject(obstacle);
 
     if (intersects.length > 0) {
-        console.log('hit'); // Print "hit" when the object is touched
+        console.log('hit');
         event.preventDefault();
     }
 }
-
-
 
 function setupThreeJS() {
     const scene = new THREE.Scene();
@@ -224,13 +205,19 @@ function setupThreeJS() {
     return { renderer, scene, camera, obstacle };
 }
 
-
-
 function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages) {
+
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
+    // Calculate Distance Between Two Points
     FindDistance(userPosition, obstacle, camera);
+
+    // Place 3D Object on the Target
     PlaceObjectOnTarget(frame, referenceSpace, trackedImages);
 
+    // Spatial Audio Location updater
+    roomSpatialAudio.updateListenerPosition(userPosition.x, userPosition.y, userPosition.z,camera);
+
+    
     renderer.render(scene, camera);
 }

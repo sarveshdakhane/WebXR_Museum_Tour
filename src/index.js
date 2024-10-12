@@ -9,16 +9,6 @@
             }
         });
 
-        // Add click events to menu options
-        document.getElementById('optionABC').addEventListener('click', function() {
-            alert('You clicked ABC');
-        });
-
-        document.getElementById('optionXYZ').addEventListener('click', function() {
-            alert('You clicked XYZ');
-        });
-
-
         document.addEventListener('touchmove', function(event) {
             if (event.scale !== undefined && event.scale !== 1) {
                 event.preventDefault();

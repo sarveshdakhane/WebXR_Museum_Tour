@@ -1,17 +1,16 @@
 {
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
     "three": "^0.167.1"
   },
   "devDependencies": {
-    "vite": "^5.4.1"
+    "vite": "^5.4.8"
   },
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "serve": "vite preview"
-}
-
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  }
 }

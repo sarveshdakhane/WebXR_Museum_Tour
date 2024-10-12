@@ -1,64 +1,139 @@
+/* Body style */
 body {
     margin: 0;
     padding: 0;
     display: flex;
-    justify-content: center;
-    align-items: flex-end;
+    flex-direction: column; /* Ensure the content stacks vertically */
+    justify-content: flex-start; /* Align content at the top */
     height: 100vh;
-    background-color: #f0f0f0;
+    background-color: #fc7f03; /* Major background color */
+    color: white; /* Default text color */
+    overflow-x: hidden; 
+    overflow-y: hidden;
 }
 
 #buttonContainer {
     width: 100%;
     display: flex;
-    justify-content: space-around; /* Distributes space around the buttons */
+    justify-content: center; /* Centers the button horizontally */
+    align-items: center;
     position: fixed;
     bottom: 20px;
-    z-index: 999;
+    z-index: 100; /* Lower z-index so the side menu is on top */
 }
 
-/* Style all buttons in the button container */
 #buttonContainer button {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 2.2vw;
+    background-color: white; 
+    color: #00308F; 
+    border: 2px solid #99b3e6; 
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-#exitButton {
-    display: none;
+#buttonContainer button:hover {
+    background-color: #00308F; 
+    color: white; 
+    border-color: #00308F;
 }
 
-/* Side menu styles */
+
+/* Header */
+#header {
+    width: 100%;
+    background-color: #fc7f03;
+    position: relative;
+    z-index: 100;
+}
+
+/* Side Menu */
 #sideMenu {
     height: 100%;
-    width: 250px;
+    width: 35%;
+    max-width: 250px; 
     position: fixed;
     top: 0;
     left: -250px;
-    background-color: #333;
+    background-color: #00308F;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     overflow-x: hidden;
     transition: 0.5s;
-    padding-top: 60px;
-    z-index: 1000;
+    z-index: 1000; /* Higher z-index to ensure it covers all other elements */
 }
 
 #sideMenu a {
-    padding: 8px 8px 8px 32px;
+    padding: 10px 0;
     text-decoration: none;
-    font-size: 25px;
-    color: #f1f1f1;
+    font-size: 18px;
+    color: white;
     display: block;
     transition: 0.3s;
+    width: 100%;
+    text-align: center; /* Centers text in each link */
 }
 
 #sideMenu a:hover {
-    color: #f0a500;
+    color: #fc7f03;
 }
 
+
+/* Title Container */
+#titleContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: #fc7f03;
+}
+
+/* Menu Icon */
 #menuIcon {
-    font-size: 30px;
-    position: fixed;
-    top: 15px;
-    left: 15px;
+    font-size: 7vw;
     cursor: pointer;
-    z-index: 1001;
+    color: white;
+    z-index: 2000; 
+}
+
+/* Museum Logo */
+#museumLogo {
+    width: 100px;
+    height: auto;
+    margin-left: 20px;
+}
+
+/* Main Screen Content */
+#mainScreen {
+    flex-grow: 1;
+    margin-left: 20px;
+    color: white;
+    text-align: left;
+}
+
+/* Main Screen Text */
+#mainScreen h1 {
+    font-size: 3vw;
+}
+
+#mainScreen p {
+    font-size: 2vw;
+}
+
+/* Show Side Menu */
+#menuIcon.open + #sideMenu {
+    left: 0;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+    #buttonContainer button {
+        padding: 10px 10px;
+    }
+
+    #museumLogo {
+        width: 15vw;
+    }
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance } from './Utility.js';
+import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance, IsCameraFacing , logMessage , OnObjectTouch} from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { RoomSpatialAudio } from './SpatialAudio.js';
@@ -38,18 +38,16 @@ try {
 }
 
 
-//Handle Log
-function logMessage(message) {
-    const logContainer = document.getElementById('logContainer');
-    logContainer.innerHTML = message;
-}
 
 async function onARButtonClick() {
     const arButton = document.getElementById('arButton');
 
     if (arButton.textContent === "Start AR") {
+
         console.log("Start AR button clicked.");
+
         await startXR();
+
         arButton.textContent = "Stop AR"; // Switch to Stop
     } else {
         console.log("Stop AR button clicked.");
@@ -75,6 +73,9 @@ async function init() {
          trackedImages = await setupImageTracking();
          return true;
 
+
+
+
     } catch (error) {
         console.error("An error occurred:", error);
         return false;
@@ -93,7 +94,7 @@ async function startXR() {
 
         console.log("Immersive AR session started.");
 
-        const { renderer, scene, camera, obstacle } = setupThreeJS(); 
+        const { renderer, scene, camera } = setupThreeJS(); 
         
         console.log("ThreeJS initialized");
 
@@ -101,24 +102,9 @@ async function startXR() {
 
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages);
 
-            //camera direction logic
-            const cameraDirection = camera.getWorldDirection(new THREE.Vector3());
-            const meshPosition =   obstacle.position;
-            const cameraPosition = camera.position;
-            const directionToMesh = meshPosition.clone().sub(cameraPosition).normalize();
-
-            const dotProduct = cameraDirection.dot(directionToMesh);
-
-            if (dotProduct > 0.9) {
-                logMessage("Camera is facing the mesh");
-            } else {
-                logMessage("Camera is not facing the mesh");
-            }
-
-
         });
 
-        console.log("XRFrame loop initiated.");
+
     } catch (error) {
         console.error("An error occurred:", error);
     }
@@ -131,6 +117,7 @@ async function setupImageTracking() {
         { index: 1, url: 'Images/QR.png', mesh: SculptureMesh, widthInMeters: 0.5 }
 
     ];
+
     const imageTrackables = [];
     for (const item of trackedImages) {
         const imageBitmap = await createXRImageBitmap(item.url);
@@ -149,6 +136,8 @@ async function setupImageTracking() {
     return imageTrackables;
 }
 
+
+
 // Function to handle AR object click (touchstart event)
 function onTouchStart(event, raycaster, camera) {
  
@@ -158,7 +147,6 @@ function onTouchStart(event, raycaster, camera) {
 
     raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
-    // Check for intersections with SculptureMesh
     const intersects = raycaster.intersectObject(obstacle);
 
     if (intersects.length > 0) {
@@ -166,6 +154,8 @@ function onTouchStart(event, raycaster, camera) {
         event.preventDefault();
     }
 }
+
+
 
 function setupThreeJS() {
     const scene = new THREE.Scene();
@@ -202,7 +192,7 @@ function setupThreeJS() {
     scene.add(controller);
 
 
-    return { renderer, scene, camera, obstacle };
+    return { renderer, scene, camera };
 }
 
 function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages) {
@@ -218,6 +208,13 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacl
     // Spatial Audio Location updater
     roomSpatialAudio.updateListenerPosition(userPosition.x, userPosition.y, userPosition.z,camera);
 
-    
+    // IsCameraFacing the target
+    if (IsCameraFacing(camera,obstacle ,new THREE.Vector3())) {
+
+        logMessage("Camera is facing the mesh");
+        } else {
+            logMessage("Camera is not facing the mesh");
+        }    
+
     renderer.render(scene, camera);
 }

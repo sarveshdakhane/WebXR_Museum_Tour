@@ -1,9 +1,12 @@
+//Handle Log
+export function logMessage(message) {
+    const logContainer = document.getElementById('logContainer');
+    logContainer.innerHTML = message;
+}
 
 export function calculateDistance(pos1, pos2) {
     return pos1.distanceTo(pos2);
 }
-
-
 
 export function FindDistance( userPosition, obstacle , camera )
 {
@@ -23,7 +26,7 @@ export function FindDistance( userPosition, obstacle , camera )
     }
 }
 
-export async function createXRImageBitmap( url) {
+export async function createXRImageBitmap(url) {
     try {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -49,7 +52,7 @@ export function PlaceObjectOnTarget(frame, referenceSpace,trackedImages) {
            const trackedImageIndex = trackedImages.find(item => item.index === result.index);
 
           if (!trackedImageIndex) {
-               console.warn("No matching tracked image found for this result.");
+               console.warn("No matching tracked image index found for this result.");
                return;
               }
                  
@@ -79,5 +82,21 @@ export function PlaceObjectOnTarget(frame, referenceSpace,trackedImages) {
         });
     } else {
         console.log("No viewer pose found.");
+    }
+}
+
+export function IsCameraFacing (camera, target_Object, location)
+{
+    //camera direction logic
+    const cameraDirection = camera.getWorldDirection(location);
+    const meshPosition =   target_Object.position;
+    const cameraPosition = camera.position;
+    const directionToMesh = meshPosition.clone().sub(cameraPosition).normalize();
+    const dotProduct = cameraDirection.dot(directionToMesh);
+
+    if (dotProduct > 0.9) {
+        return true;
+    } else {
+        return false;
     }
 }

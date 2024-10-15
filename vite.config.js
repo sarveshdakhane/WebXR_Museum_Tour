@@ -9,4 +9,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
   },
+  esbuild: {
+    target: 'es2022'
+  },
+  build: {
+    target: 'es2022'
+  }
 });

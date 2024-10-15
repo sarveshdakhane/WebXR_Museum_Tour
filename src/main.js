@@ -1,126 +1,29 @@
 import * as THREE from 'three';
-import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance, IsCameraFacing , logMessage } from './Utility.js';
+import { setupImageTrackingData, PlaceObjectsOnTarget, FindDistance, IsCameraFacing , logMessage } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { RoomSpatialAudio } from './SpatialAudio.js';
-import { SceneMeshes } from './MeshesClass.js';
+import { generalMeshes } from './data.js';
 
-//Global Object Declaration
+
+//Global Variables Declaration
 let session = null;
-let referenceSpace = null;
-let obstaclePosition = new THREE.Vector3(0, 0, -1.8);
 let audioContext;
 let roomSpatialAudio;        
-let trackedImages;
-
 document.getElementById('arButton').addEventListener('click', onARButtonClick);
 
-
-// Create Scene Meshes
-const Meshes = new SceneMeshes();
-const obstacle = Meshes.createObstacle(obstaclePosition);
-const cube = Meshes.createCube();
-
-let  SculptureMesh;
-
-try {
-    Meshes.loadSculptureModel('Statue/12338_Statue_v1_L3.obj')
-    .then((Mesh) => {
-        SculptureMesh= Mesh;
-    })
-    .catch((error) => {
-        console.error('Error loading sculpture:', error);
-    });
-
-    
-} catch (error) {
-    console.log(error);
-}
-
-
-
-async function onARButtonClick() {
-    const arButton = document.getElementById('arButton');
-
-    if (arButton.textContent === "Start AR") {
-
-        console.log("Start AR button clicked.");
-
-        await startXR();
-
-        arButton.textContent = "Stop AR"; // Switch to Stop
-    } else {
-        console.log("Stop AR button clicked.");
-        if (session) {
-            roomSpatialAudio.closeAllAudio();
-            session.end();
-            arButton.textContent = "Start AR"; // Switch back to Start
-        }
-    }
-}
-
-
-
-async function init() {
-    try {
-        const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
-        if (!navigator.xr || !isSupported) {
-            alert("WebXR or immersive-ar session is not supported on this device");
-            console.error("WebXR not supported.");
-            return false;
-        }
-        
-        // All Scene object intialization 
-
-        trackedImages = await setupImageTracking();
-
-        audioContext = new AudioContext();
-
-        roomSpatialAudio = new RoomSpatialAudio(audioContext);      
-
-        roomSpatialAudio.addPositionBasedAudio('audio1', 'Audio/A.mp3', { x: obstacle.position.x , y: obstacle.position.y, z: obstacle.position.z });
-
-        //roomSpatialAudio.addPositionBasedAudio('audio2', 'Audio/A2.mp3', { x: cube1.position.x , y: cube1.position.y, z: cube1.position.z });
-
-        roomSpatialAudio.togglePositionBasedAudio('audio1', true);
-       // roomSpatialAudio.togglePositionBasedAudio('audio2', true);
-        
-        // Adding background spatial audio with a unique ID
-        roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
-        roomSpatialAudio.toggleBackgroundAudio(true);
-
-
-
-         return true;
-
-
-
-
-    } catch (error) {
-        console.error("An error occurred:", error);
-        return false;
-    }
-}
-
 async function startXR() {
-    if (!(await init())) {
+    if (!(await checkSupport())) {
         return;
     }
     try {
-     
-        session = await createXRSession(trackedImages);    
 
-        referenceSpace = await setupReferenceSpace(session);
-
-        console.log("Immersive AR session started.");
-
-        const { renderer, scene, camera } = setupThreeJS(); 
+        const { renderer, scene, camera , targetImagesData , referenceSpace } = await setupScene();         
         
-        console.log("ThreeJS initialized");
+        console.log("Scene initialized");
 
         renderer.xr.setAnimationLoop((time, frame) => {
 
-            onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages);
+            onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData);
 
         });
 
@@ -130,54 +33,14 @@ async function startXR() {
     }
 }
 
-async function setupImageTracking() {
+async function setupScene() {
 
-    const trackedImages = [
-        { index: 0, url: 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg', mesh: cube, widthInMeters: 0.5 },
-        { index: 1, url: 'Images/p.png', mesh: SculptureMesh, widthInMeters: 0.5 }
+    let targetImagesData = await setupImageTrackingData();   
 
-    ];
+    session = await createXRSession(targetImagesData);   
 
-    const imageTrackables = [];
-    for (const item of trackedImages) {
-        const imageBitmap = await createXRImageBitmap(item.url);
-        const newItem = {
-            index: item.index,
-            url: item.url,
-            mesh: item.mesh,
-            imageBitmap: imageBitmap,
-            widthInMeters: item.widthInMeters
-        };
+    let referenceSpace = await setupReferenceSpace(session);
 
-        imageTrackables.push(newItem);
-    }
-
-
-    return imageTrackables;
-}
-
-
-
-// Function to handle AR object click (touchstart event)
-function onTouchStart(event, raycaster, camera) {
- 
-    const touch = event.touches[0];
-    const touchX = (touch.clientX / window.innerWidth) * 2 - 1;
-    const touchY = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-    raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
-
-    const intersects = raycaster.intersectObject(obstacle);
-
-    if (intersects.length > 0) {
-        console.log('hit');
-        event.preventDefault();
-    }
-}
-
-
-
-function setupThreeJS() {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
     scene.add(camera);
@@ -203,38 +66,112 @@ function setupThreeJS() {
 
       // Add the `touchstart` event listener to detect screen taps with passive: false
       window.addEventListener('touchstart', function (event) {
-        onTouchStart(event, raycaster, camera);
+        //onTouchStart(event, raycaster, camera);
     }, { passive: false }); 
 
-    scene.add(obstacle);
-    scene.add(cube);
-    scene.add(SculptureMesh);
-    scene.add(controller);
 
+    // Intialize Scene Actors Data   
+    audioContext = new AudioContext();
+    roomSpatialAudio = new RoomSpatialAudio(audioContext); 
 
-    return { renderer, scene, camera };
+    generalMeshes.forEach((item) => {
+
+        roomSpatialAudio.addPositionBasedAudio(item.id, item.audioFile , { x: item.mesh.position.x , y: item.mesh.position.y, z: item.mesh.position.z });
+        roomSpatialAudio.togglePositionBasedAudio(item.id, true);
+        scene.add(item.mesh); 
+
+    });
+
+    // Adding background spatial audio with a unique ID
+    roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
+    roomSpatialAudio.toggleBackgroundAudio(true);
+    
+    targetImagesData.forEach((items) => {
+        items.meshes.forEach((item) => {
+            scene.add(item.mesh); 
+        });
+    });
+
+    return { renderer, scene, camera , targetImagesData , referenceSpace};
 }
 
-function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, obstacle, trackedImages) {
+function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData) {
 
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
     // Calculate Distance Between Two Points
-    FindDistance(userPosition, obstacle, camera);
+    //FindDistance(userPosition, obstacle, camera);
 
     // Place 3D Object on the Target
-    PlaceObjectOnTarget(frame, referenceSpace, trackedImages);
+    PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData);
 
     // Spatial Audio Location updater
     roomSpatialAudio.updateListenerPosition(userPosition.x, userPosition.y, userPosition.z,camera);
 
-    // IsCameraFacing the target
+    /* IsCameraFacing the target
     if (IsCameraFacing(camera,obstacle ,new THREE.Vector3())) {
 
         logMessage("Camera is facing the mesh");
         } else {
             logMessage("Camera is not facing the mesh");
-        }    
-
+        }
+            
+    */        
     renderer.render(scene, camera);
 }
+
+async function onARButtonClick() {
+    const arButton = document.getElementById('arButton');
+
+    if (arButton.textContent === "Start AR") {
+
+        console.log("Start AR button clicked.");
+
+        await startXR();
+
+        arButton.textContent = "Stop AR"; // Switch to Stop
+    } else {
+        console.log("Stop AR button clicked.");
+        if (session) {
+            roomSpatialAudio.closeAllAudio();
+            session.end();
+            arButton.textContent = "Start AR"; // Switch back to Start
+        }
+    }
+}
+
+async function checkSupport() {
+    try {
+        const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
+        if (!navigator.xr || !isSupported) {
+            alert("WebXR or immersive-ar session is not supported on this device");
+            console.error("WebXR not supported.");
+            return false;
+        }  
+
+        return true;
+
+    } catch (error) {
+        console.error("An error occurred:", error);
+        return false;
+    }
+}
+
+
+/* Function to handle AR object click (touchstart event)
+function onTouchStart(event, raycaster, camera) {
+ 
+    const touch = event.touches[0];
+    const touchX = (touch.clientX / window.innerWidth) * 2 - 1;
+    const touchY = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
+
+    const intersects = raycaster.intersectObject(obstacle);
+
+    if (intersects.length > 0) {
+        console.log('hit');
+        event.preventDefault();
+    }
+}
+*/

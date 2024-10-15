@@ -1,3 +1,5 @@
+import { targetImagesData } from './data.js';
+
 //Handle Log
 export function logMessage(message) {
     const logContainer = document.getElementById('logContainer');
@@ -26,6 +28,26 @@ export function FindDistance( userPosition, obstacle , camera )
     }
 }
 
+export async function setupImageTrackingData() {
+    
+    const imageTrackables = [];
+    for (const item of targetImagesData) {
+        const imageBitmap = await createXRImageBitmap(item.url);
+        const newItem = {
+            index: item.index,
+            url: item.url,
+            meshes: item.meshes,
+            imageBitmap: imageBitmap,
+            imageWidth: item.imageWidth,
+            imageHeight: item.imageHeight,
+            widthInMeters : item.widthInMeters
+
+        };
+        imageTrackables.push(newItem);
+    }
+    return imageTrackables;
+}
+
 export async function createXRImageBitmap(url) {
     try {
         const img = new Image();
@@ -40,48 +62,89 @@ export async function createXRImageBitmap(url) {
     }
 }
 
-export function PlaceObjectOnTarget(frame, referenceSpace,trackedImages) {
+export function PlaceObjectsOnTarget( frame, referenceSpace, trackedImages) {
 
     const pose = frame.getViewerPose(referenceSpace);
-
-    if (pose) {
-
-        const results = frame.getImageTrackingResults();
-          results.forEach((result,index) => { 
-
-           const trackedImageIndex = trackedImages.find(item => item.index === result.index);
-
-          if (!trackedImageIndex) {
-               console.warn("No matching tracked image index found for this result.");
-               return;
-              }
-                 
-            const MeshDObject = trackedImageIndex.mesh;
-
-            if (result.trackingState === 'tracked') {
-
-                const imagePose = frame.getPose(result.imageSpace, referenceSpace);
-
-                if (imagePose) {
-                    console.log("Tracked image is visible and being processed.");
-                    const position = imagePose.transform.position;
-                    const orientation = imagePose.transform.orientation;
-
-                    MeshDObject.position.set(position.x, position.y - 0.3, position.z);
-                    //MeshDObject.quaternion.set(orientation.x, orientation.y, orientation.z, orientation.w);
-                    MeshDObject.visible = true;
-
-                } else {
-                    console.warn("Pose could not be obtained for the tracked image.");
-                    MeshDObject.visible = false;
-                }
-            } else {
-                console.log("Image is not tracked. Hiding the cube.");
-                MeshDObject.visible = false;
-            }
-        });
-    } else {
+    if (!pose) {
         console.log("No viewer pose found.");
+        return;
+    }
+
+    const results = frame.getImageTrackingResults();
+    results.forEach((result) => {
+
+        // Get the image's pose if it's tracked
+        const imagePose = result.trackingState === 'tracked' ? frame.getPose(result.imageSpace, referenceSpace) : null;        
+
+        const isVisible = imagePose !== null; 
+
+        if (isVisible) {
+
+            const trackedImageIndex = trackedImages.find(item => item.index === result.index);
+
+            if (!trackedImageIndex) {
+                console.warn("No matching tracked image index found for this result.");
+                return;
+            }  
+
+            TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible);
+
+        } 
+        else 
+        {
+            trackedImages.forEach(trackedImageIndex => {
+                TrackedImageDataInUse(trackedImageIndex, null, false);
+            });
+        }
+    });
+}
+
+function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
+
+    // if the trackedImageIndex.meshes is empty or undefined, return
+    if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) {
+        return;
+    }
+
+    // If the image is tracked and visible, update positions
+    if (isVisible && imagePose) {
+
+        const { imageWidth, imageHeight } = trackedImageIndex;
+        const position = imagePose.transform.position;
+
+        // Get the total number of meshes
+        const totalMeshes = trackedImageIndex.meshes.length;
+
+        // Calculate a radius based on the size of the image and number of meshes
+        const radiusX = imageWidth * 0.5; // Adjust multiplier for proximity
+        const radiusY = imageHeight * 0.5;
+
+        // Loop through each mesh and distribute them around the image dynamically
+        trackedImageIndex.meshes.forEach((item, index) => {
+
+            // Calculate angle for each mesh to distribute them evenly
+            const angle = (Math.PI * 2 / totalMeshes) * index;
+
+            // Dynamically calculate position offsets based on the angle
+            const offsetX = Math.cos(angle) * radiusX;
+            const offsetY = Math.sin(angle) * radiusY;
+
+            // Set position for each mesh
+            item.mesh.position.set(
+                position.x + offsetX,
+                position.y + offsetY,  // Adjust Y slightly down to match the desired layout
+                position.z
+            );
+
+            // Make the mesh visible
+            item.mesh.visible = true;
+        });
+
+    } else {
+        // If the image is not tracked, hide all meshes
+        trackedImageIndex.meshes.forEach(item => {
+            item.mesh.visible = false;
+        });
     }
 }
 

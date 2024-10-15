@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance, IsCameraFacing , logMessage , OnObjectTouch} from './Utility.js';
+import { createXRImageBitmap, PlaceObjectOnTarget, FindDistance, IsCameraFacing , logMessage } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { RoomSpatialAudio } from './SpatialAudio.js';
@@ -52,11 +52,14 @@ async function onARButtonClick() {
     } else {
         console.log("Stop AR button clicked.");
         if (session) {
+            roomSpatialAudio.closeAllAudio();
             session.end();
             arButton.textContent = "Start AR"; // Switch back to Start
         }
     }
 }
+
+
 
 async function init() {
     try {
@@ -67,10 +70,27 @@ async function init() {
             return false;
         }
         
-        // All Scene object intialization        
-         audioContext = new AudioContext();
-         roomSpatialAudio = new RoomSpatialAudio(audioContext, 'Audio/A.mp3', obstaclePosition );        
-         trackedImages = await setupImageTracking();
+        // All Scene object intialization 
+
+        trackedImages = await setupImageTracking();
+
+        audioContext = new AudioContext();
+
+        roomSpatialAudio = new RoomSpatialAudio(audioContext);      
+
+        roomSpatialAudio.addPositionBasedAudio('audio1', 'Audio/A.mp3', { x: obstacle.position.x , y: obstacle.position.y, z: obstacle.position.z });
+
+        //roomSpatialAudio.addPositionBasedAudio('audio2', 'Audio/A2.mp3', { x: cube1.position.x , y: cube1.position.y, z: cube1.position.z });
+
+        roomSpatialAudio.togglePositionBasedAudio('audio1', true);
+       // roomSpatialAudio.togglePositionBasedAudio('audio2', true);
+        
+        // Adding background spatial audio with a unique ID
+        roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
+        roomSpatialAudio.toggleBackgroundAudio(true);
+
+
+
          return true;
 
 
@@ -114,7 +134,7 @@ async function setupImageTracking() {
 
     const trackedImages = [
         { index: 0, url: 'https://raw.githubusercontent.com/stemkoski/AR.js-examples/master/images/earth-flat.jpg', mesh: cube, widthInMeters: 0.5 },
-        { index: 1, url: 'Images/QR.png', mesh: SculptureMesh, widthInMeters: 0.5 }
+        { index: 1, url: 'Images/p.png', mesh: SculptureMesh, widthInMeters: 0.5 }
 
     ];
 

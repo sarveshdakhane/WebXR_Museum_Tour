@@ -17,10 +17,9 @@ generalMeshes = [
 const targetImagesData = [
     { 
       index: 0, 
-      url: 'Images/p.png',     
-      imageWidth: 0.297, 
-      imageHeight: 0.210 , 
-      widthInMeters : 0.297,
+      url: 'Images/Painting.jpg',     
+      imageWidth: 0.597, 
+      imageHeight: 0.335,
       meshes: 
       [
         { mesh: cube1, audioFile: "ac.mp3" },

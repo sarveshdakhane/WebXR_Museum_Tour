@@ -1,21 +1,37 @@
 export async function createXRSession(trackedImages) {
     try {
 
+        const requiredFeatures = ['dom-overlay', 'image-tracking'].filter(feature => {
+            return feature === 'dom-overlay' || feature === 'image-tracking';
+        });
+
         const xrTrackedImages = trackedImages.map(item => ({
             image: item.imageBitmap,
-            widthInMeters: item.widthInMeters
+            widthInMeters: item.imageWidth, 
+
         }));
-        
+
         const session = await navigator.xr.requestSession('immersive-ar', {
-            requiredFeatures: ['image-tracking', 'dom-overlay'],
+            requiredFeatures,
             trackedImages: xrTrackedImages,
             domOverlay: { root: document.body }
         });
+
         console.log("XR Session created.");
-        return session;
+
+        return {
+            session,
+            imageTracking: requiredFeatures.includes('image-tracking'),
+            domOverlay: requiredFeatures.includes('dom-overlay')
+        };
+
     } catch (error) {
         console.error("Failed to create XR session:", error);
-        throw error;
+        return {
+            session: null,
+            imageTracking: false,
+            domOverlay: false
+        };
     }
 }
 

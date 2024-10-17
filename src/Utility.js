@@ -1,4 +1,6 @@
 import { targetImagesData } from './data.js';
+import * as THREE from 'three';
+
 
 //Handle Log
 export function logMessage(message) {
@@ -6,26 +8,16 @@ export function logMessage(message) {
     logContainer.innerHTML = message;
 }
 
-export function calculateDistance(pos1, pos2) {
-    return pos1.distanceTo(pos2);
-}
-
-export function FindDistance( userPosition, obstacle , camera )
+export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item)
 {
-    const safeDistance = 0.9;
-    let color;
+        const safeDistance = 1.2;
 
-    if (obstacle && camera) {
-
-        const distance = calculateDistance(userPosition, obstacle.position);
-        // Update color based on distance
-        if (distance < safeDistance) {
-            color = 0xFF0000;
-        } else {
-            color = 0x00FF00;
-        }
-        obstacle.material.color.set(color);
-    }
+        if (userPosition.distanceTo(position) < safeDistance) {
+            item.mesh.material.color.set(0xFF0000);
+        }         
+        else { 
+            item.mesh.material.color.set(0x0000ff);
+        }        
 }
 
 export async function setupImageTrackingData() {
@@ -39,9 +31,7 @@ export async function setupImageTrackingData() {
             meshes: item.meshes,
             imageBitmap: imageBitmap,
             imageWidth: item.imageWidth,
-            imageHeight: item.imageHeight,
-            widthInMeters : item.widthInMeters
-
+            imageHeight: item.imageHeight
         };
         imageTrackables.push(newItem);
     }
@@ -62,7 +52,7 @@ export async function createXRImageBitmap(url) {
     }
 }
 
-export function PlaceObjectsOnTarget( frame, referenceSpace, trackedImages) {
+export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages , userPosition) {
 
     const pose = frame.getViewerPose(referenceSpace);
     if (!pose) {
@@ -83,30 +73,28 @@ export function PlaceObjectsOnTarget( frame, referenceSpace, trackedImages) {
             const trackedImageIndex = trackedImages.find(item => item.index === result.index);
 
             if (!trackedImageIndex) {
+
                 console.warn("No matching tracked image index found for this result.");
                 return;
             }  
 
-            TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible);
-
+           TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
         } 
         else 
         {
             trackedImages.forEach(trackedImageIndex => {
-                TrackedImageDataInUse(trackedImageIndex, null, false);
+            TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
             });
         }
     });
 }
 
-function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
+function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible ,userPosition) {
 
-    // if the trackedImageIndex.meshes is empty or undefined, return
     if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) {
         return;
     }
 
-    // If the image is tracked and visible, update positions
     if (isVisible && imagePose) {
 
         const { imageWidth, imageHeight } = trackedImageIndex;
@@ -116,7 +104,7 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
         const totalMeshes = trackedImageIndex.meshes.length;
 
         // Calculate a radius based on the size of the image and number of meshes
-        const radiusX = imageWidth * 0.5; // Adjust multiplier for proximity
+        const radiusX = imageWidth * 0.5;
         const radiusY = imageHeight * 0.5;
 
         // Loop through each mesh and distribute them around the image dynamically
@@ -129,15 +117,15 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
             const offsetX = Math.cos(angle) * radiusX;
             const offsetY = Math.sin(angle) * radiusY;
 
-            // Set position for each mesh
             item.mesh.position.set(
                 position.x + offsetX,
-                position.y + offsetY,  // Adjust Y slightly down to match the desired layout
+                position.y + offsetY,
                 position.z
             );
 
-            // Make the mesh visible
             item.mesh.visible = true;
+            FindSafeDistanceBetweenUserandExhibit(userPosition,position,item);
+
         });
 
     } else {

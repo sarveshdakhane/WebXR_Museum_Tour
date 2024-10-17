@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { setupImageTrackingData, PlaceObjectsOnTarget, FindDistance, IsCameraFacing , logMessage } from './Utility.js';
+import { setupImageTrackingData, PlaceObjectsOnTarget, IsCameraFacing , logMessage } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { RoomSpatialAudio } from './SpatialAudio.js';
 import { generalMeshes } from './data.js';
@@ -37,7 +37,7 @@ async function setupScene() {
 
     let targetImagesData = await setupImageTrackingData();   
 
-    session = await createXRSession(targetImagesData);   
+    session = (await createXRSession(targetImagesData)).session;   
 
     let referenceSpace = await setupReferenceSpace(session);
 
@@ -99,14 +99,11 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
 
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
-    // Calculate Distance Between Two Points
-    //FindDistance(userPosition, obstacle, camera);
-
     // Place 3D Object on the Target
-    PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData);
+    PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData , userPosition );
 
     // Spatial Audio Location updater
-    roomSpatialAudio.updateListenerPosition(userPosition.x, userPosition.y, userPosition.z,camera);
+    roomSpatialAudio.updateListenerPosition(camera, userPosition);
 
     /* IsCameraFacing the target
     if (IsCameraFacing(camera,obstacle ,new THREE.Vector3())) {

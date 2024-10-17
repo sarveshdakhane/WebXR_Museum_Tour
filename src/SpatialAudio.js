@@ -110,10 +110,10 @@ export class RoomSpatialAudio {
     }
 
     // Update listener position in 3D space
-    updateListenerPosition(x, y, z, camera) {
-        this.listener.positionX.setValueAtTime(x, this.audioContext.currentTime);
-        this.listener.positionY.setValueAtTime(y, this.audioContext.currentTime);
-        this.listener.positionZ.setValueAtTime(z, this.audioContext.currentTime);
+    updateListenerPosition(camera, userPosition ) {
+        this.listener.positionX.setValueAtTime(userPosition.x, this.audioContext.currentTime);
+        this.listener.positionY.setValueAtTime(userPosition.y, this.audioContext.currentTime);
+        this.listener.positionZ.setValueAtTime(userPosition.z, this.audioContext.currentTime);
 
         this.updateListenerOrientation(camera);
         this.updateVolume();

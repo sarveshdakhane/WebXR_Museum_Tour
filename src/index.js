@@ -8,9 +8,3 @@
                 sideMenu.style.left = '0px';
             }
         });
-
-        document.addEventListener('touchmove', function(event) {
-            if (event.scale !== undefined && event.scale !== 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });

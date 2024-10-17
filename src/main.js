@@ -8,7 +8,8 @@ import { generalMeshes } from './data.js';
 //Global Variables Declaration
 let session = null;
 let audioContext;
-let roomSpatialAudio;        
+let roomSpatialAudio; 
+let lastSelectedObject = null;       
 document.getElementById('arButton').addEventListener('click', onARButtonClick);
 
 async function startXR() {
@@ -35,6 +36,9 @@ async function startXR() {
 
 async function setupScene() {
 
+    try
+    {  
+
     let targetImagesData = await setupImageTrackingData();   
 
     session = (await createXRSession(targetImagesData)).session;   
@@ -58,29 +62,20 @@ async function setupScene() {
     renderer.xr.setReferenceSpaceType('local');
     renderer.xr.setSession(session);
 
-    // Raycaster for detecting clicks
-    const raycaster = new THREE.Raycaster();
-    
-    // Create a controller for detecting the user's interactions (e.g., tapping)
-    const controller = renderer.xr.getController(0);
-
-      // Add the `touchstart` event listener to detect screen taps with passive: false
-      window.addEventListener('touchstart', function (event) {
-        //onTouchStart(event, raycaster, camera);
-    }, { passive: false }); 
-
-
     // Intialize Scene Actors Data   
     audioContext = new AudioContext();
     roomSpatialAudio = new RoomSpatialAudio(audioContext); 
 
+    var interactablesObjects = [];
+
     generalMeshes.forEach((item) => {
 
         roomSpatialAudio.addPositionBasedAudio(item.id, item.audioFile , { x: item.mesh.position.x , y: item.mesh.position.y, z: item.mesh.position.z });
-        roomSpatialAudio.togglePositionBasedAudio(item.id, true);
+        //roomSpatialAudio.togglePositionBasedAudio(item.id, true);
         scene.add(item.mesh); 
-
+        interactablesObjects.push(item.mesh);
     });
+    
 
     // Adding background spatial audio with a unique ID
     roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
@@ -89,10 +84,24 @@ async function setupScene() {
     targetImagesData.forEach((items) => {
         items.meshes.forEach((item) => {
             scene.add(item.mesh); 
+            interactablesObjects.push(item.mesh);
         });
     });
 
+    // Raycaster for detecting clicks and Object Interaction
+    const raycaster = new THREE.Raycaster();
+    
+      // Add the `touchstart` event listener to detect screen taps with passive: false
+    window.addEventListener('touchstart', function (event) {
+        onObjectClick(event, raycaster, camera ,interactablesObjects);
+    }, { passive: true }); 
+
     return { renderer, scene, camera , targetImagesData , referenceSpace};
+
+}
+ catch (error) {
+    console.error("An error occurred at setupScene()", error);   
+}
 }
 
 function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData) {
@@ -155,8 +164,8 @@ async function checkSupport() {
 }
 
 
-/* Function to handle AR object click (touchstart event)
-function onTouchStart(event, raycaster, camera) {
+// Function to Handle AR Object Click (touchstart event)
+function onObjectClick(event, raycaster, camera , interactablesObjects) {
  
     const touch = event.touches[0];
     const touchX = (touch.clientX / window.innerWidth) * 2 - 1;
@@ -164,11 +173,15 @@ function onTouchStart(event, raycaster, camera) {
 
     raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
-    const intersects = raycaster.intersectObject(obstacle);
+    const intersects = raycaster.intersectObjects(interactablesObjects,true);
 
     if (intersects.length > 0) {
-        console.log('hit');
-        event.preventDefault();
+
+        if (intersects[0].object.name && lastSelectedObject !== intersects[0].object.name){    
+           
+            lastSelectedObject = intersects[0].object.name;
+            console.log('Clicked object name:', intersects[0].object.name);
+            roomSpatialAudio.togglePositionBasedAudio(lastSelectedObject, true);
+        }
     }
 }
-*/

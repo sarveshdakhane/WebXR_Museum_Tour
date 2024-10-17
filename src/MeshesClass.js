@@ -9,6 +9,7 @@ export class SceneMeshes {
         const geometry = new THREE.BoxGeometry(0.5, 0.4, 0.1);
         const material = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
         const obstacle = new THREE.Mesh(geometry, material);
+        obstacle.name = 'obsracle';
         obstacle.position.set(0, 0, -1.5);
         return obstacle;
     }
@@ -18,6 +19,7 @@ export class SceneMeshes {
         const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
         const cube = new THREE.Mesh(geometry, material);
         cube.visible = false;
+        cube.name = 'BlueCube';
         return cube;
     }
  
@@ -43,6 +45,11 @@ export class SceneMeshes {
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
             model.visible = true; 
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.name = 'sculpture';
+                }
+            });
     
             return model; 
 

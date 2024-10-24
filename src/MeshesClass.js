@@ -1,28 +1,81 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
 
 
 export class SceneMeshes {
     constructor() {}
 
     createObstacle() {
-        const geometry = new THREE.BoxGeometry(0.5, 0.4, 0.1);
-        const material = new THREE.MeshPhongMaterial({ color: 0x00FF00 });
+
+        const geometry = new THREE.PlaneGeometry(0.5, 0.4);
+
+       // const videoTexture = new THREE.VideoTexture(video);
+
+        const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+
         const obstacle = new THREE.Mesh(geometry, material);
         obstacle.name = 'obsracle';
         obstacle.position.set(0, 0, -1.5);
         return obstacle;
+
     }
 
     createCube() {
         const geometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
-        const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
-        const cube = new THREE.Mesh(geometry, material);
+        const originalMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+        const cube = new THREE.Mesh(geometry, originalMaterial);
         cube.visible = false;
         cube.name = 'BlueCube';
+
+        const DangerzoneMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+        cube.userData.originalMaterial = originalMaterial;
+        cube.userData.DangerzoneMaterial = DangerzoneMaterial;
+        cube.userData.useExtraMaterial = false; 
+
+        cube.onBeforeRender = () => {
+            cube.material = cube.userData.useExtraMaterial
+                ? cube.userData.DangerzoneMaterial
+                : cube.userData.originalMaterial;
+        };
+    
         return cube;
     }
- 
+
+    createButton() {
+        const geometry = new THREE.CylinderGeometry(0.05, 0.05, 0.02, 32);
+        const textureLoader = new THREE.TextureLoader();
+        const topTexture = textureLoader.load('Images/Restart.jpg');
+        
+        // Create the original materials for the button
+        const materialSide = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        const materialTop = new THREE.MeshStandardMaterial({ map: topTexture });
+        const originalMaterials = [materialSide, materialTop, materialSide];
+        
+        // Create the button with the original materials
+        const button = new THREE.Mesh(geometry, originalMaterials);
+        button.visible = false;
+        button.name = 'Button';
+    
+        // Create the extra material for the "danger zone" effect (e.g., red)
+        const DangerzoneMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    
+        // Store the original materials and danger zone material in userData
+        button.userData.originalMaterials = originalMaterials;
+        button.userData.DangerzoneMaterial = DangerzoneMaterial;
+        button.userData.useExtraMaterial = false; // Initially use the original materials
+    
+        // Set up the onBeforeRender function to switch materials
+        button.onBeforeRender = () => {
+            button.material = button.userData.useExtraMaterial
+                ? button.userData.DangerzoneMaterial
+                : button.userData.originalMaterials;
+        };
+    
+        return button;
+    }
+    
     async loadAndConfigureModel (url, position = { x: 0.5, y: -0.7, z: -2.3 }, scale = { x: 0.005, y: 0.005, z: 0.005 }, rotation = { x: 0, y: 0, z: 0 }) {
         try {
             const objLoader = new OBJLoader();
@@ -58,4 +111,45 @@ export class SceneMeshes {
             throw error;
         }
     }
+
+
+    async loadAndConfigureModelGLTF(
+        url, 
+        id, 
+        position = { x: 0.5, y: -0.7, z: -2.3 }, 
+        scale = { x: 0.2, y: 0.2, z: 0.2 }, 
+        rotation = { x: 0, y: 0, z: 0 }
+    ) {
+        try {
+            const gltfLoader = new GLTFLoader();
+    
+            // Load the model and wait for the Promise to resolve
+            const gltf = await new Promise((resolve, reject) => {
+                gltfLoader.load(
+                    url,
+                    (gltf) => resolve(gltf),
+                    undefined,
+                    (error) => reject(error)
+                );
+            });
+    
+            const model = gltf.scene;
+            model.position.set(position.x, position.y, position.z);
+            model.scale.set(scale.x, scale.y, scale.z);
+            model.rotation.set(rotation.x, rotation.y, rotation.z);
+            model.visible = true;
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.name = id;
+                }
+            });
+    
+            return model;
+    
+        } catch (error) {
+            console.error('Error loading the GLTF model:', error);
+            throw error;
+        }
+    }
+   
 }

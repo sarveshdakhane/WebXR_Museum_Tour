@@ -11,13 +11,21 @@ export function logMessage(message) {
 export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item)
 {
         const safeDistance = 1.2;
+        const mesh = item.mesh;
 
         if (userPosition.distanceTo(position) < safeDistance) {
-            item.mesh.material.color.set(0xFF0000);
-        }         
-        else { 
-            item.mesh.material.color.set(0x0000ff);
-        }        
+ 
+            if (mesh && mesh.userData) {
+                //mesh.userData.useExtraMaterial = true;
+                mesh.visible = false; 
+            }
+        } else {
+            if (mesh && mesh.userData) {
+                //mesh.userData.useExtraMaterial = false;
+                mesh.visible = true; 
+            }
+        }
+             
 }
 
 export async function setupImageTrackingData() {

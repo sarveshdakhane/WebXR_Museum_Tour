@@ -57,22 +57,8 @@ export class SceneMeshes {
         const button = new THREE.Mesh(geometry, originalMaterials);
         button.visible = false;
         button.name = 'Button';
-    
-        // Create the extra material for the "danger zone" effect (e.g., red)
-        const DangerzoneMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    
-        // Store the original materials and danger zone material in userData
-        button.userData.originalMaterials = originalMaterials;
-        button.userData.DangerzoneMaterial = DangerzoneMaterial;
-        button.userData.useExtraMaterial = false; // Initially use the original materials
-    
-        // Set up the onBeforeRender function to switch materials
-        button.onBeforeRender = () => {
-            button.material = button.userData.useExtraMaterial
-                ? button.userData.DangerzoneMaterial
-                : button.userData.originalMaterials;
-        };
-    
+        button.rotation.x = Math.PI / 2;
+
         return button;
     }
     
@@ -117,8 +103,8 @@ export class SceneMeshes {
         url, 
         id, 
         position = { x: 0.5, y: -0.7, z: -2.3 }, 
-        scale = { x: 0.2, y: 0.2, z: 0.2 }, 
-        rotation = { x: 0, y: 0, z: 0 }
+        scale = { x: 0.7, y: 0.7, z: 0.7 }, 
+        rotation = { x: -6, y: 0, z: 0}
     ) {
         try {
             const gltfLoader = new GLTFLoader();
@@ -137,7 +123,7 @@ export class SceneMeshes {
             model.position.set(position.x, position.y, position.z);
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
-            model.visible = true;
+            model.visible = false;
             model.traverse((child) => {
                 if (child.isMesh) {
                     child.name = id;

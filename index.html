@@ -11,15 +11,45 @@
     <header id="header">
     </header>
 
-    <div id="titleContainer">
+    <div id="titleContainer" metadata="Hide">
         <span id="menuIcon">&#9776;</span>
         <img src="https://siegerlandmuseum.de/wp-content/uploads/2016/02/logo.jpg" alt="Siegerlandmuseum im Oberen Schloss" id="museumLogo">
         <div id="mainScreen">
             <h1>Welcome to Siegerlandmuseum AR Experience</h1>
-            <p>Immerse yourself in the rich history of Siegerland as you explore our exhibitions using Augmented Reality.</p>
+            <p>Immerse yourself in the rich history of Siegerland using Augmented Reality.</p>
             <p>Click <strong>Start AR</strong> to begin your virtual museum tour.</p>
         </div>
     </div>
+
+    <div id="DetailsContainer" metadata="Hide">
+        <div id="DetailsScreen">
+            <!-- AR Requirements Section -->
+            <div id="Requirements">
+                <h2>AR Experience Requirements</h2>
+                <p>This AR experience is supported only on the <strong>latest version of Chrome on Android devices</strong>. Please ensure the following:</p>
+                <ul>
+                    <li>Your browser supports <strong>WebXR</strong></li>
+                    <li>The <strong>dom-overlay</strong> and <strong>image-tracking</strong> features are enabled.</li>
+                    <li>Camera permissions are granted for augmented reality.</li>
+                    <li><strong>Headphone use is recommended</strong> for an immersive spatial sound experience.</li>
+                </ul>
+                <h3>Steps to Start</h3>
+                <ol>
+                    <li>Ensure you have the latest version of Chrome installed on your Android device.</li>
+                    <li>Open Chrome and go to <strong>chrome://flags</strong>.</li>
+                    <li>In the flags search bar, find and enable <strong>WebXR Incubations</strong>.</li>
+                    <li>Restart Chrome after enabling WebXR Incubations.</li>
+                    <li>Click on <strong>Start AR</strong> to begin your virtual tour.</li>
+                    <li>Grant camera access when prompted after starting the AR experience.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div id="GifContainer" metadata="Hide">
+        <img src="Images/ClickHere.gif" alt="Click Here to Start AR">
+    </div>
+
 
     <!-- Buttons Container -->
     <div id="buttonContainer">

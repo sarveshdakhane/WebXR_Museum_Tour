@@ -18,7 +18,8 @@ body {
     justify-content: center; /* Centers the button horizontally */
     align-items: center;
     position: fixed;
-    bottom: 20px;
+    bottom: 12px;
+    right: -310px; 
     z-index: 100; /* Lower z-index so the side menu is on top */
 }
 
@@ -37,7 +38,6 @@ body {
     color: white; 
     border-color: #00308F;
 }
-
 
 /* Header */
 #header {
@@ -79,7 +79,6 @@ body {
 #sideMenu a:hover {
     color: #fc7f03;
 }
-
 
 /* Title Container */
 #titleContainer {
@@ -136,4 +135,45 @@ body {
     #museumLogo {
         width: 15vw;
     }
+}
+
+
+#DetailsContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: white;
+}
+
+#DetailsScreen {
+    flex-grow: 1;
+    margin-left: 20px;
+    color:   #fc7f03;
+    text-align: left;
+}
+
+/* Main Screen Text */
+#DetailsScreen h1 {
+    font-size: 6vw;
+}
+
+#DetailsScreen p {
+    font-size: 3vw;
+}
+
+
+#GifContainer {
+    text-align: center; /* Center the image within its container */
+    margin-top: 20px; /* Adds some space above the GIF */
+}
+
+#GifContainer img {
+    width: 180px; /* Set the width of the GIF */
+    height: auto; /* Maintain the aspect ratio */
+    cursor: pointer; /* Changes cursor to pointer */
+    position: relative; /* Needed for offset positioning */
+    top: 200px; /* Moves image down */
+    left: 170px; /* Moves image to the right */
+    transition: transform 0.2s; /* Smooth transition for scaling effect */
 }

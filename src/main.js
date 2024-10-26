@@ -131,12 +131,14 @@ async function onARButtonClick() {
 
     if (arButton.textContent === "Start AR") {
 
+        hideElementsWithMetadata();
         console.log("Start AR button clicked.");
 
         await startXR();
 
         arButton.textContent = "Stop AR"; // Switch to Stop
     } else {
+        location.reload();
         console.log("Stop AR button clicked.");
         if (session) {
             roomSpatialAudio.closeAllAudio();
@@ -184,4 +186,12 @@ function onObjectClick(event, raycaster, camera , interactablesObjects) {
             roomSpatialAudio.togglePositionBasedAudio(lastSelectedObject, true);
         }
     }
+}
+
+
+function hideElementsWithMetadata() {
+    const elementsToHide = document.querySelectorAll('div[metadata="Hide"]');
+    elementsToHide.forEach(element => {
+        element.style.display = 'none';
+    });
 }

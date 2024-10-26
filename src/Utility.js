@@ -15,13 +15,11 @@ export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, it
 
         if (userPosition.distanceTo(position) < safeDistance) {
  
-            if (mesh && mesh.userData) {
-                //mesh.userData.useExtraMaterial = true;
-                mesh.visible = false; 
+            if (mesh) {
+                 mesh.visible = false; 
             }
         } else {
-            if (mesh && mesh.userData) {
-                //mesh.userData.useExtraMaterial = false;
+            if (mesh) {
                 mesh.visible = true; 
             }
         }
@@ -60,44 +58,38 @@ export async function createXRImageBitmap(url) {
     }
 }
 
-export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages , userPosition) {
-
+export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userPosition) {
     const pose = frame.getViewerPose(referenceSpace);
     if (!pose) {
         console.log("No viewer pose found.");
+
+        // Hide all meshes in trackedImages since no pose means no tracking data available
+        trackedImages.forEach(trackedImageIndex => {
+            TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
+        });
+
         return;
     }
 
     const results = frame.getImageTrackingResults();
-    results.forEach((result) => {
 
-        // Get the image's pose if it's tracked
-        const imagePose = result.trackingState === 'tracked' ? frame.getPose(result.imageSpace, referenceSpace) : null;        
+    // Iterate through all trackedImages to update their state based on the results
+    trackedImages.forEach((trackedImageIndex) => {
 
-        const isVisible = imagePose !== null; 
+        const result = results.find(r => r.index === trackedImageIndex.index);
 
-        if (isVisible) {
+        const imagePose = result && result.trackingState === 'tracked' 
+            ? frame.getPose(result.imageSpace, referenceSpace) 
+            : null;
+        
+        const isVisible = imagePose !== null;
 
-            const trackedImageIndex = trackedImages.find(item => item.index === result.index);
-
-            if (!trackedImageIndex) {
-
-                console.warn("No matching tracked image index found for this result.");
-                return;
-            }  
-
-           TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
-        } 
-        else 
-        {
-            trackedImages.forEach(trackedImageIndex => {
-            TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
-            });
-        }
+        TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
     });
 }
 
-function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible ,userPosition) {
+
+function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition) {
 
     if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) {
         return;
@@ -105,44 +97,48 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible ,userPosi
 
     if (isVisible && imagePose) {
 
-        const { imageWidth, imageHeight } = trackedImageIndex;
+        const { imageWidth , imageHeight} = trackedImageIndex;
         const position = imagePose.transform.position;
 
-        // Get the total number of meshes
-        const totalMeshes = trackedImageIndex.meshes.length;
+        const yOffset = position.y - (imageHeight / 2) - 0.05;
 
-        // Calculate a radius based on the size of the image and number of meshes
-        const radiusX = imageWidth * 0.5;
-        const radiusY = imageHeight * 0.5;
 
-        // Loop through each mesh and distribute them around the image dynamically
-        trackedImageIndex.meshes.forEach((item, index) => {
+        // First mesh Position 
+        const firstMesh = trackedImageIndex.meshes[0];
 
-            // Calculate angle for each mesh to distribute them evenly
-            const angle = (Math.PI * 2 / totalMeshes) * index;
-
-            // Dynamically calculate position offsets based on the angle
-            const offsetX = Math.cos(angle) * radiusX;
-            const offsetY = Math.sin(angle) * radiusY;
-
-            item.mesh.position.set(
-                position.x + offsetX,
-                position.y + offsetY,
+        if (firstMesh) {
+            firstMesh.mesh.position.set(
+                position.x,        
+                position.y - 0.1,             
                 position.z
             );
 
-            item.mesh.visible = true;
-            FindSafeDistanceBetweenUserandExhibit(userPosition,position,item);
+            firstMesh.mesh.visible = true;
+            //FindSafeDistanceBetweenUserandExhibit(userPosition, position, firstMesh);
+        }
 
-        });
+        // Second mesh Position 
+        const SecondMesh = trackedImageIndex.meshes[1];
+
+        if (SecondMesh) {
+            SecondMesh.mesh.position.set(
+                position.x,        
+                yOffset - 0.1,             
+                position.z + 0.5
+            );
+
+            SecondMesh.mesh.visible = true;
+           // FindSafeDistanceBetweenUserandExhibit(userPosition, position, SecondMesh);
+        }
 
     } else {
-        // If the image is not tracked, hide all meshes
+
         trackedImageIndex.meshes.forEach(item => {
             item.mesh.visible = false;
         });
     }
 }
+
 
 export function IsCameraFacing (camera, target_Object, location)
 {

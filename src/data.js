@@ -2,9 +2,10 @@ import { SceneMeshes } from './MeshesClass.js';
 
 
 const Meshes = new SceneMeshes();
-const Button = Meshes.createButton();
-const MeshforCimonParo = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'CimonParo' );
-const MeshforOccasio = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'Occasio' );
+const BttnCimonParo = Meshes.createButton("BttnCimonParo");
+const BttnOccasio = Meshes.createButton("BttnOccasio");
+const MeshforCimonParo = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'MeshCimonParo' );
+const MeshforOccasio = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'MeshOccasio' );
 
 let generalMeshes;
 
@@ -23,8 +24,8 @@ const targetImagesData = [
       imageHeight: 0.335,
       meshes: 
       [
-         { mesh: Button, audioFile: "ac.mp3" },
-         { mesh: MeshforCimonParo, audioFile: "ad.mp3" }
+         { mesh: BttnCimonParo, audioFile: "Audio/A2.mp3" },
+         { mesh: MeshforCimonParo, audioFile: "Audio/A.mp3" }
       ]
     },
     {
@@ -34,14 +35,10 @@ const targetImagesData = [
       imageHeight: 0.335,
       meshes: 
       [
-        //{ mesh: Button, audioFile: "ac.mp3" },
-       // { mesh: MeshforOccasio, audioFile: "ad.mp3" }
+        { mesh: BttnOccasio, audioFile: "ac.mp3" },
+        { mesh: MeshforOccasio, audioFile: "ad.mp3"}
       ]
     }
 ]; 
-
-
-
-
 
 export{ targetImagesData , generalMeshes };

@@ -9,7 +9,7 @@ import { generalMeshes } from './data.js';
 let session = null;
 let audioContext;
 let roomSpatialAudio; 
-let lastSelectedObject = null;       
+let SelectedObject = null;       
 document.getElementById('arButton').addEventListener('click', onARButtonClick);
 
 async function startXR() {
@@ -68,6 +68,7 @@ async function setupScene() {
 
     var interactablesObjects = [];
 
+    /*
     generalMeshes.forEach((item) => {
 
         roomSpatialAudio.addPositionBasedAudio(item.id, item.audioFile , { x: item.mesh.position.x , y: item.mesh.position.y, z: item.mesh.position.z });
@@ -76,17 +77,17 @@ async function setupScene() {
         interactablesObjects.push(item.mesh);
     });
     
+    */   
+    targetImagesData.forEach((items) => {
+        items.meshes.forEach((item) => {
+            scene.add(item.mesh);
+            interactablesObjects.push(item);
+       });
+    });
 
     // Adding background spatial audio with a unique ID
     roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
     roomSpatialAudio.toggleBackgroundAudio(true);
-    
-    targetImagesData.forEach((items) => {
-        items.meshes.forEach((item) => {
-            scene.add(item.mesh); 
-            interactablesObjects.push(item.mesh);
-        });
-    });
 
     // Raycaster for detecting clicks and Object Interaction
     const raycaster = new THREE.Raycaster();
@@ -175,20 +176,36 @@ function onObjectClick(event, raycaster, camera , interactablesObjects) {
 
     raycaster.setFromCamera(new THREE.Vector2(touchX, touchY), camera);
 
-    const intersects = raycaster.intersectObjects(interactablesObjects,true);
+    const AllMeshes = interactablesObjects.map(item => item.mesh);
+    const intersects = raycaster.intersectObjects(AllMeshes,true);
 
-    if (intersects.length > 0) {
+    if (intersects.length > 0 && intersects[0].object.name) {
 
-        if (intersects[0].object.name && lastSelectedObject !== intersects[0].object.name){    
-           
-            lastSelectedObject = intersects[0].object.name;
-            console.log('Clicked object name:', intersects[0].object.name);
-            roomSpatialAudio.togglePositionBasedAudio(lastSelectedObject, true);
+        const clickedObjectName = intersects[0].object.name;
+    
+        // Check if there is a SelectedObject and if it's different from the new intersected object
+        if (!SelectedObject || SelectedObject.object.name !== clickedObjectName) {
+     
+            if (SelectedObject) {
+                roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
+            }    
+
+            SelectedObject = intersects[0];
+            console.log('Clicked object name:', clickedObjectName);
+    
+            const Audio = interactablesObjects.find(entry => entry.mesh.name === clickedObjectName);
+
+            if (Audio) {
+                roomSpatialAudio.addPositionBasedAudio(clickedObjectName, Audio.audioFile, {
+                    x: SelectedObject.point.x,
+                    y: SelectedObject.point.y,
+                    z: SelectedObject.point.z
+                });
+                roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
+            }
         }
-    }
+    }    
 }
-
-
 function hideElementsWithMetadata() {
     const elementsToHide = document.querySelectorAll('div[metadata="Hide"]');
     elementsToHide.forEach(element => {

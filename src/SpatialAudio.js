@@ -81,19 +81,32 @@ export class RoomSpatialAudio {
     // Start or stop position-based audio by ID
     togglePositionBasedAudio(id, shouldPlay) {
         const audioObj = this.positionBasedAudios[id];
+        
         if (!audioObj) {
             console.warn(`Audio with ID ${id} not found.`);
             return;
         }
-
+    
         if (shouldPlay) {
+            // Play the audio if shouldPlay is true
             audioObj.audioElement.play();
         } else {
+            // Pause and reset the audio playback position
             audioObj.audioElement.pause();
-            audioObj.audioElement.currentTime = 0; // Reset the audio playback position
+            audioObj.audioElement.currentTime = 0;
+    
+            // Disconnect and destroy audio nodes to free resources
+            audioObj.gainNode.disconnect();
+            audioObj.panner.disconnect();
+            audioObj.audioElement.src = ''; // Remove audio source
+    
+            // Remove the audio object from positionBasedAudios
+            delete this.positionBasedAudios[id];
+            
+            console.log(`Audio with ID ${id} has been stopped and removed.`);
         }
     }
-
+    
     // Start or stop the background audio
     toggleBackgroundAudio(shouldPlay) {
         if (!this.backgroundAudio) {
@@ -135,50 +148,56 @@ export class RoomSpatialAudio {
 
     // Update volume of position-based audios and adjust background audio depending on listener's distance
     updateVolume() {
-        let isUserNearAnyPositionAudio = false;
-
+        let isUserNearAnyActivePositionAudio = false;
+        let closestDistance = Infinity; // Track the closest distance to any active position-based audio
+    
+        // Loop over each position-based audio
         Object.values(this.positionBasedAudios).forEach((audioObj) => {
-            const { sourcePosition, gainNode } = audioObj;
+            const { sourcePosition, gainNode, audioElement } = audioObj;
+            
+            // Calculate distance between the listener and the audio source
             const distance = Math.sqrt(
                 Math.pow(this.listener.positionX.value - sourcePosition.x, 2) +
                 Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
                 Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
             );
-
+    
             let volume;
-            if (distance <= this.audioRadius) {
-                isUserNearAnyPositionAudio = true; // User is near a position-based audio
+    
+            // Check if within radius and the audio is actively playing
+            if (distance <= this.audioRadius && !audioElement.paused) {
+                isUserNearAnyActivePositionAudio = true;  // There’s an active audio within range
+                closestDistance = Math.min(closestDistance, distance); // Update the closest distance
+    
+                // Calculate position-based audio volume with a fade-out effect
                 const normalizedDistance = distance / this.audioRadius;
                 volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
             } else {
-                volume = 0; // Mute if outside the radius
-                audioObj.audioElement.currentTime = 0; // Reset the audio playback position
+                // If outside the radius, or not playing, mute the audio and reset it
+                volume = 0;
+                audioElement.currentTime = 0;
+                audioElement.pause();
             }
-
+    
             gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
         });
-
-        // Adjust background audio volume based on whether the user is near any position-based audio
+    
+        // Adjust background audio volume based on the presence of active position-based audio within range
         if (this.backgroundAudio) {
-            const backgroundVolume = isUserNearAnyPositionAudio ? 0 : 1; // Mute background if near, else play it
+            let backgroundVolume;
+            const maxBackgroundVolume = 0.3; // Set the maximum background volume when near positioned audio
+    
+            if (isUserNearAnyActivePositionAudio) {
+                const normalizedBackgroundVolume = 1 - (closestDistance / this.audioRadius);
+                backgroundVolume = normalizedBackgroundVolume * maxBackgroundVolume;
+            } else {
+                backgroundVolume = 1;
+            }
+    
             this.backgroundAudio.gainNode.gain.setValueAtTime(backgroundVolume, this.audioContext.currentTime);
         }
     }
-
-    // Update a specific position-based audio's position by ID
-    updateSourcePosition(id, newPosition) {
-        const audioObj = this.positionBasedAudios[id];
-        if (!audioObj) {
-            console.warn(`Audio with ID ${id} not found.`);
-            return;
-        }
-
-        audioObj.sourcePosition = newPosition;
-        audioObj.panner.positionX.setValueAtTime(newPosition.x, this.audioContext.currentTime);
-        audioObj.panner.positionY.setValueAtTime(newPosition.y, this.audioContext.currentTime);
-        audioObj.panner.positionZ.setValueAtTime(newPosition.z, this.audioContext.currentTime);
-    }
-
+    
     // Close all audios (both position-based and background)
     closeAllAudio() {
         // Pause and reset all position-based audios

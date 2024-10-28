@@ -43,8 +43,8 @@ export class SceneMeshes {
         return cube;
     }
 
-    createButton() {
-        const geometry = new THREE.CylinderGeometry(0.05, 0.05, 0.02, 32);
+    createButton(id, position = { x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() * 2 - 1 }) {
+        const geometry = new THREE.CylinderGeometry(0.03, 0.03, 0.03, 32);
         const textureLoader = new THREE.TextureLoader();
         const topTexture = textureLoader.load('Images/Restart.jpg');
         
@@ -56,11 +56,13 @@ export class SceneMeshes {
         // Create the button with the original materials
         const button = new THREE.Mesh(geometry, originalMaterials);
         button.visible = false;
-        button.name = 'Button';
+        button.name = id;
         button.rotation.x = Math.PI / 2;
-
+        button.position.set(position.x, position.y, position.z);
+    
         return button;
     }
+    
     
     async loadAndConfigureModel (url, position = { x: 0.5, y: -0.7, z: -2.3 }, scale = { x: 0.005, y: 0.005, z: 0.005 }, rotation = { x: 0, y: 0, z: 0 }) {
         try {
@@ -79,17 +81,16 @@ export class SceneMeshes {
                     }
                 );
             });
-    
+            model.name = id;
             model.position.set(position.x, position.y, position.z);
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
             model.visible = true; 
             model.traverse((child) => {
                 if (child.isMesh) {
-                    child.name = 'sculpture';
+                    child.name = id;
                 }
-            });
-    
+            });    
             return model; 
 
         } catch (error) {
@@ -103,7 +104,7 @@ export class SceneMeshes {
         url, 
         id, 
         position = { x: 0.5, y: -0.7, z: -2.3 }, 
-        scale = { x: 0.7, y: 0.7, z: 0.7 }, 
+        scale = { x: 0.2, y: 0.2, z: 0.2 }, 
         rotation = { x: -6, y: 0, z: 0}
     ) {
         try {
@@ -120,6 +121,7 @@ export class SceneMeshes {
             });
     
             const model = gltf.scene;
+            model.name = id;
             model.position.set(position.x, position.y, position.z);
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
@@ -128,8 +130,7 @@ export class SceneMeshes {
                 if (child.isMesh) {
                     child.name = id;
                 }
-            });
-    
+            });    
             return model;
     
         } catch (error) {

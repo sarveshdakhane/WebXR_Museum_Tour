@@ -104,12 +104,12 @@ export class SceneMeshes {
         url, 
         id, 
         position = { x: 0.5, y: -0.7, z: -2.3 }, 
-        scale = { x: 0.2, y: 0.2, z: 0.2 }, 
+        scale = { x: 0.02, y: 0.02, z: 0.02 }, 
         rotation = { x: -6, y: 0, z: 0}
     ) {
         try {
             const gltfLoader = new GLTFLoader();
-    
+            
             // Load the model and wait for the Promise to resolve
             const gltf = await new Promise((resolve, reject) => {
                 gltfLoader.load(
@@ -119,24 +119,39 @@ export class SceneMeshes {
                     (error) => reject(error)
                 );
             });
-    
+            
             const model = gltf.scene;
             model.name = id;
             model.position.set(position.x, position.y, position.z);
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
             model.visible = false;
+    
+            // Add an AnimationMixer for the model if it has animations
+            let mixer = null;
+            if (gltf.animations && gltf.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(model);
+    
+                // Play all animations (or you can select specific clips if needed)
+                gltf.animations.forEach((clip) => {
+                    const action = mixer.clipAction(clip);
+                    action.play();
+                });
+            }
+    
             model.traverse((child) => {
                 if (child.isMesh) {
                     child.name = id;
                 }
-            });    
-            return model;
+            });
+    
+            // Return both model and mixer (you might need to handle the mixer outside this function)
+            return { model, mixer };
     
         } catch (error) {
             console.error('Error loading the GLTF model:', error);
             throw error;
         }
     }
-   
+    
 }

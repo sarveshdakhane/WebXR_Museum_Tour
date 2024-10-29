@@ -4,7 +4,7 @@ import { SceneMeshes } from './MeshesClass.js';
 const Meshes = new SceneMeshes();
 const BttnCimonParo = Meshes.createButton("BttnCimonParo");
 const BttnOccasio = Meshes.createButton("BttnOccasio");
-const MeshforCimonParo = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'MeshCimonParo' );
+const MeshforCimonParo = await Meshes.loadAndConfigureModelGLTF( 'Statue/microwave.glb' , 'MeshCimonParo' );
 const MeshforOccasio = await Meshes.loadAndConfigureModelGLTF( 'Statue/CimonandParoBook.glb' , 'MeshOccasio' );
 
 let generalMeshes;
@@ -25,7 +25,7 @@ const targetImagesData = [
       meshes: 
       [
          { mesh: BttnCimonParo, audioFile: "Audio/A2.mp3" },
-         { mesh: MeshforCimonParo, audioFile: "Audio/A.mp3" }
+         { mesh: MeshforCimonParo.model, Animatio:MeshforCimonParo.mixer, audioFile: "Audio/A.mp3" }
       ]
     },
     {
@@ -36,7 +36,7 @@ const targetImagesData = [
       meshes: 
       [
         { mesh: BttnOccasio, audioFile: "ac.mp3" },
-        { mesh: MeshforOccasio, audioFile: "ad.mp3"}
+        { mesh: MeshforOccasio.model, Animatio:MeshforCimonParo.mixer , audioFile: "ad.mp3"}
       ]
     }
 ]; 

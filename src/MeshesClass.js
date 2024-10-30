@@ -100,13 +100,7 @@ export class SceneMeshes {
     }
 
 
-    async loadAndConfigureModelGLTF(
-        url, 
-        id, 
-        position = { x: 0.5, y: -0.7, z: -2.3 }, 
-        scale = { x: 0.02, y: 0.02, z: 0.02 }, 
-        rotation = { x: -6, y: 0, z: 0}
-    ) {
+    async loadAndConfigureModelGLTF(url, id, position, scale, rotation) {
         try {
             const gltfLoader = new GLTFLoader();
             
@@ -145,13 +139,19 @@ export class SceneMeshes {
                 }
             });
     
-            // Return both model and mixer (you might need to handle the mixer outside this function)
-            return { model, mixer };
+            // Return model, mixer, position, and rotation
+            return {
+                model,
+                mixer,
+                position: model.position.clone(),    // Return a clone of the position
+                rotation: model.rotation.clone()     // Return a clone of the rotation
+            };
     
         } catch (error) {
             console.error('Error loading the GLTF model:', error);
             throw error;
         }
     }
+    
     
 }

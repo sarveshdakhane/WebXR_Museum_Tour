@@ -99,11 +99,14 @@ function setupInteractableObjects(scene, targetImagesData) {
 }
 
 // Frame update for XR
-function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData) {
+function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData) 
+{
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
     // Place 3D Object on the Target and update spatial audio listener
     PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData, userPosition);
+
+    // Update the Spatial Audio
     roomSpatialAudio.updateListenerPosition(camera, userPosition);
 
     // Play animation if an object is selected
@@ -182,11 +185,8 @@ function onObjectClick(event, raycaster, camera, interactablesObjects) {
 // Handle object selection and setup animation/audio
 function handleObjectSelection(intersectedObject, interactablesObjects) {
 
-    SelectedObjectAnimation = null;
-    const clickedObjectName = intersectedObject.object.name;    
 
-    // Check if the object is already selected
-    if (SelectedObject && SelectedObject.object.name === clickedObjectName) return;
+    const clickedObjectName = intersectedObject.object.name;    
 
     // Deselect previous object
     if (SelectedObject) roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
@@ -197,16 +197,19 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
 
     const data = interactablesObjects.find(entry => entry.mesh.name === clickedObjectName);
 
-    if (data) {
-        SelectedObjectAnimation = data.Animatio || null;
+    if (data && data.clickable === true ) {
 
-        roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
-            x: SelectedObject.point.x,
-            y: SelectedObject.point.y,
-            z: SelectedObject.point.z
-        });
-
-        roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
+                SelectedObjectAnimation = null;        
+                SelectedObjectAnimation = data.Animation;  
+           
+                roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
+                    x: SelectedObject.point.x,
+                    y: SelectedObject.point.y,
+                    z: SelectedObject.point.z
+                });
+        
+                roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);            
+       
     }
 }
 

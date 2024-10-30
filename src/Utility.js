@@ -63,30 +63,33 @@ export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userP
     if (!pose) {
         console.log("No viewer pose found.");
 
-        // Hide all meshes in trackedImages since no pose means no tracking data available
+        // Hide all meshes if tracking data is unavailable
         trackedImages.forEach(trackedImageIndex => {
             TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
+            trackedImageIndex.isAlreadyTracked = false; // Reset tracking flag
         });
-
         return;
     }
 
     const results = frame.getImageTrackingResults();
 
-    // Iterate through all trackedImages to update their state based on the results
     trackedImages.forEach((trackedImageIndex) => {
-
         const result = results.find(r => r.index === trackedImageIndex.index);
 
         const imagePose = result && result.trackingState === 'tracked' 
             ? frame.getPose(result.imageSpace, referenceSpace) 
             : null;
-        
+
         const isVisible = imagePose !== null;
 
-        TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
+        if (isVisible && !trackedImageIndex.isAlreadyTracked) {
+            // Only update position once when the object is first tracked
+            TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
+            trackedImageIndex.isAlreadyTracked = true;
+        }
     });
 }
+
 
 
 function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition) {
@@ -100,33 +103,27 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosi
         const { imageWidth , imageHeight} = trackedImageIndex;
         const position = imagePose.transform.position;
 
-        const yOffset = position.y - (imageHeight / 2) - 0.05;
-
-
         // First mesh Position 
         const firstMesh = trackedImageIndex.meshes[0];
 
         if (firstMesh) {
             firstMesh.mesh.position.set(
-                position.x,        
-                position.y - 0.1,             
-                position.z
+                position.x + firstMesh.position.x,        
+                position.y + firstMesh.position.y,             
+                position.z + firstMesh.position.z
             );
-
             firstMesh.mesh.visible = true;
             //FindSafeDistanceBetweenUserandExhibit(userPosition, position, firstMesh);
         }
 
         // Second mesh Position 
         const SecondMesh = trackedImageIndex.meshes[1];
-
         if (SecondMesh) {
             SecondMesh.mesh.position.set(
-                position.x,        
-                yOffset - 0.1,             
-                position.z + 0.5
+                position.x + SecondMesh.position.x,        
+                position.y + SecondMesh.position.y,             
+                position.z + SecondMesh.position.z
             );
-
             SecondMesh.mesh.visible = true;
            // FindSafeDistanceBetweenUserandExhibit(userPosition, position, SecondMesh);
         }

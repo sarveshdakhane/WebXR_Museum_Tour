@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 
 
@@ -99,21 +100,31 @@ export class SceneMeshes {
         }
     }
 
-
     async loadAndConfigureModelGLTF(url, id, position, scale, rotation) {
         try {
             const gltfLoader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
             
+            // Set the path to the Draco decoder files
+            dracoLoader.setDecoderPath('Statue/');  // Adjust this path as needed
+
+            dracoLoader.preload();
+
+            gltfLoader.setDRACOLoader(dracoLoader);
+    
             // Load the model and wait for the Promise to resolve
             const gltf = await new Promise((resolve, reject) => {
                 gltfLoader.load(
                     url,
                     (gltf) => resolve(gltf),
                     undefined,
-                    (error) => reject(error)
+                    (error) => {
+                        console.error('Error loading GLTF model:', error);
+                        reject(error);
+                    }
                 );
             });
-            
+    
             const model = gltf.scene;
             model.name = id;
             model.position.set(position.x, position.y, position.z);
@@ -125,8 +136,6 @@ export class SceneMeshes {
             let mixer = null;
             if (gltf.animations && gltf.animations.length > 0) {
                 mixer = new THREE.AnimationMixer(model);
-    
-                // Play all animations (or you can select specific clips if needed)
                 gltf.animations.forEach((clip) => {
                     const action = mixer.clipAction(clip);
                     action.play();
@@ -139,12 +148,15 @@ export class SceneMeshes {
                 }
             });
     
+            // Clean up the DRACOLoader after loading
+            dracoLoader.dispose();
+    
             // Return model, mixer, position, and rotation
             return {
                 model,
                 mixer,
-                position: model.position.clone(),    // Return a clone of the position
-                rotation: model.rotation.clone()     // Return a clone of the rotation
+                position: model.position.clone(),
+                rotation: model.rotation.clone()
             };
     
         } catch (error) {
@@ -152,6 +164,7 @@ export class SceneMeshes {
             throw error;
         }
     }
+    
     
     
 }

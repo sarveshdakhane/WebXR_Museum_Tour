@@ -7,16 +7,17 @@ const Meshes = new SceneMeshes();
 const GuideCimonandParo = await Meshes.loadAndConfigureModelGLTF( 
   'Statue/GuideCimonandParo.glb', 
   'GuideCimonandParo', 
-  { x: -0.3, y: -0.4, z: -0.2},// position
-  { x: 0.2, y: 0.2, z: 0.2 },// scale
+  { x: -0.5, y: -0.4, z: -0.2},// position
+  { x: 0.4, y: 0.4, z: 0.4 },// scale
   { x: 0, y: 0.4, z: 0 }  // rotation
 );
+
 
 const BookCimonandParo = await Meshes.loadAndConfigureModelGLTF( 
   'Statue/BookCimonandParo.glb', 
   'BookCimonandParo', 
-  { x: 0.3, y: -0.3, z: -0.2 },// position
-  { x: 0.6, y: 0.6, z: 0.6 },// scale
+  { x: 0.0, y: -0.5, z: -0.2 },// position
+  { x: 0.9, y: 0.9, z: 0.9 },// scale
   { x: -6, y: 0, z: 0 }  // rotation
 );
 
@@ -24,13 +25,6 @@ const BookCimonandParo = await Meshes.loadAndConfigureModelGLTF(
 // Other Art Target
 
 const BttnOccasio = Meshes.createButton("BttnOccasio");
-const MeshforOccasio = await Meshes.loadAndConfigureModelGLTF( 
-  'Statue/BookCimonandParo.glb', 
-  'MeshforOccasio', 
-  { x: 100, y: 100, z: 100 },// position
-  { x: 0.4, y: 0.4, z: 0.4 },// scale
-  { x: -6, y: 0, z: 0 }  // rotation
-);
 
 
 let generalMeshes;
@@ -62,8 +56,8 @@ const targetImagesData = [
       imageHeight: 0.335,
       meshes: 
       [
-        { mesh: BttnOccasio, audioFile: "ac.mp3" },
-        { mesh: MeshforOccasio.model, Animatio:MeshforOccasio.mixer , audioFile: "ad.mp3"}
+        { mesh: BttnOccasio, audioFile: "ac.mp3" }
+       // { mesh: MeshforOccasio.model, Animatio:MeshforOccasio.mixer , audioFile: "ad.mp3"}
       ]
     }
 ]; 

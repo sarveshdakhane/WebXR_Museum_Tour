@@ -60,7 +60,7 @@ async function setupScene() {
         const interactablesObjects = setupInteractableObjects(scene, targetImagesData);
 
         // Set up background spatial audio
-        roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
+        roomSpatialAudio.addBackgroundAudio('background', 'Audio/A.mp3');
         roomSpatialAudio.toggleBackgroundAudio(true);
 
         // Raycaster for detecting clicks and object interaction
@@ -185,11 +185,7 @@ function onObjectClick(event, raycaster, camera, interactablesObjects) {
 // Handle object selection and setup animation/audio
 function handleObjectSelection(intersectedObject, interactablesObjects) {
 
-
-    const clickedObjectName = intersectedObject.object.name;    
-
-    // Deselect previous object
-    if (SelectedObject) roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
+    const clickedObjectName = intersectedObject.object.name;   
     
     // Select new object
     SelectedObject = intersectedObject;
@@ -199,7 +195,9 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
 
     if (data && data.clickable === true ) {
 
-                SelectedObjectAnimation = null;        
+        if (SelectedObject) {roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);}
+
+               // SelectedObjectAnimation = null;        
                 SelectedObjectAnimation = data.Animation;  
            
                 roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {

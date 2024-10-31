@@ -24,7 +24,6 @@ export class RoomSpatialAudio {
         }
 
         const audioElement = new Audio(audioSourcePath);
-        audioElement.loop = true;
 
         // Create media element source
         const track = this.audioContext.createMediaElementSource(audioElement);
@@ -90,6 +89,10 @@ export class RoomSpatialAudio {
         if (shouldPlay) {
             // Play the audio if shouldPlay is true
             audioObj.audioElement.play();
+            audioObj.audioElement.onended = () => {
+                console.log(`Audio with ID ${id} has completed.`);
+                // Perform any additional cleanup or callbacks here
+            };
         } else {
             // Pause and reset the audio playback position
             audioObj.audioElement.pause();

@@ -1,6 +1,4 @@
 import { targetImagesData } from './data.js';
-import * as THREE from 'three';
-
 
 //Handle Log
 export function logMessage(message) {
@@ -10,20 +8,17 @@ export function logMessage(message) {
 
 export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item)
 {
-        const safeDistance = 1.2;
-        const mesh = item.mesh;
+        const safeDistance = 0.8;
 
         if (userPosition.distanceTo(position) < safeDistance) {
  
-            if (mesh) {
-                 mesh.visible = false; 
-            }
+            toggleWarning(item,true);
+
         } else {
-            if (mesh) {
-                mesh.visible = true; 
-            }
+
+            toggleWarning(item,false);
+
         }
-             
 }
 
 export async function setupImageTrackingData() {
@@ -33,11 +28,13 @@ export async function setupImageTrackingData() {
         const imageBitmap = await createXRImageBitmap(item.url);
         const newItem = {
             index: item.index,
+            Name: item.Name,
             url: item.url,
             meshes: item.meshes,
             imageBitmap: imageBitmap,
             imageWidth: item.imageWidth,
-            imageHeight: item.imageHeight
+            imageHeight: item.imageHeight,
+            isAlreadyTracked:  item.isAlreadyTracked
         };
         imageTrackables.push(newItem);
     }
@@ -84,15 +81,19 @@ export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userP
 
         if (isVisible && !trackedImageIndex.isAlreadyTracked) {
             // Only update position once when the object is first tracked
-            TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition);
+            TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible);
             trackedImageIndex.isAlreadyTracked = true;
         }
+
+        if (isVisible && imagePose)
+        {
+            FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name);
+        }
+
     });
 }
 
-
-
-function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosition) {
+function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
 
     if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) {
         return;
@@ -113,7 +114,6 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosi
                 position.z + firstMesh.position.z
             );
             firstMesh.mesh.visible = true;
-            //FindSafeDistanceBetweenUserandExhibit(userPosition, position, firstMesh);
         }
 
         // Second mesh Position 
@@ -125,7 +125,6 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible, userPosi
                 position.z + SecondMesh.position.z
             );
             SecondMesh.mesh.visible = true;
-           // FindSafeDistanceBetweenUserandExhibit(userPosition, position, SecondMesh);
         }
 
     } else {
@@ -149,6 +148,44 @@ export function IsCameraFacing (camera, target_Object, location)
     if (dotProduct > 0.9) {
         return true;
     } else {
+        return false;
+    }
+}
+
+
+export function toggleWarning(objectName, visibility) {
+    const warningDiv = document.getElementById("Warrning");
+    const warningText = warningDiv.querySelector("h2");
+
+    // Update the text in the h2 tag with the provided object name
+    warningText.textContent = `Please keep a safe distance from the ${objectName}. Thank you!`;
+
+    // Set visibility based on the boolean value
+    if (visibility) {
+        warningDiv.style.display = "block"; // Show the div
+    } else {
+        warningDiv.style.display = "none"; // Hide the div
+    }
+}
+
+export function hideElementsWithMetadata() {
+    document.querySelectorAll('div[metadata="Hide"]').forEach(element => {
+        element.style.display = 'none';
+    });
+}
+
+export async function checkSupport() {
+    try {
+        const isSupported = await navigator.xr?.isSessionSupported('immersive-ar');
+        if (!isSupported) {
+            alert("WebXR or immersive-ar session is not supported on this device");
+            console.error("WebXR not supported.");
+            return false;
+        }
+        return true;
+
+    } catch (error) {
+        console.error("An error occurred:", error);
         return false;
     }
 }

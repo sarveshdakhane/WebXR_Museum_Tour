@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { setupImageTrackingData, PlaceObjectsOnTarget, IsCameraFacing, logMessage } from './Utility.js';
+import { setupImageTrackingData, PlaceObjectsOnTarget, IsCameraFacing, logMessage , hideElementsWithMetadata , checkSupport} from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { RoomSpatialAudio } from './SpatialAudio.js';
 import { generalMeshes } from './data.js';
@@ -55,7 +55,7 @@ async function setupScene() {
 
         // Initialize Audio and Objects
         audioContext = new AudioContext();
-        roomSpatialAudio = new RoomSpatialAudio(audioContext);
+        roomSpatialAudio = new RoomSpatialAudio(audioContext, 1.5, 0.6, 0.01, handleAudioEnd);
 
         const interactablesObjects = setupInteractableObjects(scene, targetImagesData);
 
@@ -120,6 +120,8 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
     }
     */
 
+    logMessage("Camera is facing the mesh");
+
     renderer.render(scene, camera);
 }
 
@@ -139,22 +141,6 @@ async function onARButtonClick() {
             session.end();
             arButton.textContent = "Start AR";
         }
-    }
-}
-
-async function checkSupport() {
-    try {
-        const isSupported = await navigator.xr?.isSessionSupported('immersive-ar');
-        if (!isSupported) {
-            alert("WebXR or immersive-ar session is not supported on this device");
-            console.error("WebXR not supported.");
-            return false;
-        }
-        return true;
-
-    } catch (error) {
-        console.error("An error occurred:", error);
-        return false;
     }
 }
 
@@ -184,36 +170,37 @@ function onObjectClick(event, raycaster, camera, interactablesObjects) {
 
 // Handle object selection and setup animation/audio
 function handleObjectSelection(intersectedObject, interactablesObjects) {
-
     const clickedObjectName = intersectedObject.object.name;   
-    
-    // Select new object
-    SelectedObject = intersectedObject;
-    console.log('Clicked object name:', clickedObjectName);
-
     const data = interactablesObjects.find(entry => entry.mesh.name === clickedObjectName);
 
-    if (data && data.clickable === true ) {
+    // If data exists and is clickable, proceed with object selection and audio setup
+    if (data && data.clickable) {
+        // Deselect the currently selected object if it exists
+        if (SelectedObject) {
+            roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
+        }
 
-        if (SelectedObject) {roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);}
+        // Update SelectedObject and SelectedObjectAnimation
+        SelectedObject = intersectedObject;
+        SelectedObjectAnimation = data.Animation;
 
-               // SelectedObjectAnimation = null;        
-                SelectedObjectAnimation = data.Animation;  
-           
-                roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
-                    x: SelectedObject.point.x,
-                    y: SelectedObject.point.y,
-                    z: SelectedObject.point.z
-                });
-        
-                roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);            
-       
+        // Configure and play position-based audio
+        roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
+            x: intersectedObject.point.x,
+            y: intersectedObject.point.y,
+            z: intersectedObject.point.z
+        });
+        roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
+
+        console.log('Clicked object name:', clickedObjectName);
     }
 }
 
-// Hide elements with metadata attribute
-function hideElementsWithMetadata() {
-    document.querySelectorAll('div[metadata="Hide"]').forEach(element => {
-        element.style.display = 'none';
-    });
+
+function handleAudioEnd(audioId) {
+    if (SelectedObject && SelectedObject.object.name === audioId) {
+        SelectedObjectAnimation = null;
+        console.log(`Stopped animation for ${audioId}`);
+    }
 }
+

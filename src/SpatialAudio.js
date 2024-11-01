@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 
 export class RoomSpatialAudio {
-    constructor(audioContext, audioRadius = 1.5, maxVolume = 0.6, minVolume = 0.01) {
+    constructor(audioContext, audioRadius = 1.5, maxVolume = 0.6, minVolume = 0.01, onAudioEndCallback = null) {
         this.audioContext = audioContext;
         this.audioRadius = audioRadius;
         this.maxVolume = maxVolume;
         this.minVolume = minVolume;
+        this.onAudioEndCallback = onAudioEndCallback; 
 
         // Initialize the listener
         this.listener = this.audioContext.listener;
@@ -87,12 +88,15 @@ export class RoomSpatialAudio {
         }
     
         if (shouldPlay) {
-            // Play the audio if shouldPlay is true
+
             audioObj.audioElement.play();
             audioObj.audioElement.onended = () => {
-                console.log(`Audio with ID ${id} has completed.`);
-                // Perform any additional cleanup or callbacks here
+                if (this.onAudioEndCallback) {
+                    this.onAudioEndCallback(id);
+                }
             };
+
+
         } else {
             // Pause and reset the audio playback position
             audioObj.audioElement.pause();
@@ -154,8 +158,8 @@ export class RoomSpatialAudio {
         let isUserNearAnyActivePositionAudio = false;
         let closestDistance = Infinity; // Track the closest distance to any active position-based audio
     
-        // Loop over each position-based audio
-        Object.values(this.positionBasedAudios).forEach((audioObj) => {
+        // Loop over each position-based audio, using Object.entries to get the id and audioObj
+        Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
             const { sourcePosition, gainNode, audioElement } = audioObj;
             
             // Calculate distance between the listener and the audio source
@@ -180,6 +184,9 @@ export class RoomSpatialAudio {
                 volume = 0;
                 audioElement.currentTime = 0;
                 audioElement.pause();
+                if (this.onAudioEndCallback) {
+                    this.onAudioEndCallback(id);  // Call the callback with the id
+                }
             }
     
             gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
@@ -188,11 +195,11 @@ export class RoomSpatialAudio {
         // Adjust background audio volume based on the presence of active position-based audio within range
         if (this.backgroundAudio) {
             let backgroundVolume;
-            const maxBackgroundVolume = 0.3; // Set the maximum background volume when near positioned audio
+            const maxBackgroundVolume = 0.1; // Set the maximum background volume when near positioned audio
     
             if (isUserNearAnyActivePositionAudio) {
                 const normalizedBackgroundVolume = 1 - (closestDistance / this.audioRadius);
-                backgroundVolume = normalizedBackgroundVolume * maxBackgroundVolume;
+                backgroundVolume = normalizedBackgroundVolume * maxBackgroundVolume * 0.3;
             } else {
                 backgroundVolume = 1;
             }
@@ -201,7 +208,7 @@ export class RoomSpatialAudio {
         }
     }
     
-    // Close all audios (both position-based and background)
+        // Close all audios (both position-based and background)
     closeAllAudio() {
         // Pause and reset all position-based audios
         Object.values(this.positionBasedAudios).forEach(audioObj => {

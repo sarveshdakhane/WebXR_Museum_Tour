@@ -177,3 +177,37 @@ body {
     left: 170px; /* Moves image to the right */
     transition: transform 0.2s; /* Smooth transition for scaling effect */
 }
+
+
+#Warrning {
+    position: fixed;
+    display: none;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 2.5vw;
+    padding: 25px;
+    background-color: rgba(255, 69, 0, 0.9); /* Bright red-orange background */
+    color: white; /* White text for readability */
+    border: 3px solid #ff0000; /* Bold red border */
+    border-radius: 8px;
+    box-shadow: 0px 0px 20px rgba(255, 0, 0, 0.7); /* Red glow shadow */
+    animation: pulse 1.5s infinite; /* Pulsing animation */
+}
+
+/* Add a pulsing effect */
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(255, 0, 0, 1); }
+    100% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.6); }
+}
+
+/* Optional icon styling */
+#Warrning::before {
+    content: "⚠️"; /* Unicode warning symbol */
+    display: block;
+    font-size: 4vw;
+    margin-bottom: 10px; /* Space between icon and text */
+}
+

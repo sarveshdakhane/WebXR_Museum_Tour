@@ -39,6 +39,7 @@ generalMeshes = [
 const targetImagesData = [
     { 
       index: 0, 
+      Name: "CimonParo",
       url: 'Images/CimonParo.jpg',     
       imageWidth: 0.597, 
       imageHeight: 0.335,
@@ -51,6 +52,7 @@ const targetImagesData = [
     },
     {
       index: 1, 
+      Name: "ABC",
       url: 'Images/Occasio.jpg',     
       imageWidth: 0.597, 
       imageHeight: 0.335,
@@ -58,7 +60,8 @@ const targetImagesData = [
       [
         { mesh: BttnOccasio, audioFile: "ac.mp3" }
        // { mesh: MeshforOccasio.model, Animatio:MeshforOccasio.mixer , audioFile: "ad.mp3"}
-      ]
+      ],
+      isAlreadyTracked: false
     }
 ]; 
 

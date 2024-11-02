@@ -1,28 +1,25 @@
 import { targetImagesData } from './data.js';
 
-//Handle Log
+
 export function logMessage(message) {
     const logContainer = document.getElementById('logContainer');
-    logContainer.innerHTML = message;
+    if (logContainer) {
+        logContainer.innerHTML = message;
+    }
 }
 
-export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item)
-{
-        const safeDistance = 0.8;
-
-        if (userPosition.distanceTo(position) < safeDistance) {
- 
-            toggleWarning(item,true);
-
-        } else {
-
-            toggleWarning(item,false);
-
-        }
+export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item, roomSpatialAudio){
+    const safeDistance = 0.8;
+    if (userPosition.distanceTo(position) < safeDistance) {
+        toggleWarning(item, true);
+        roomSpatialAudio.startWarningSound(true);
+    } else {
+        toggleWarning(item, false);
+        roomSpatialAudio.startWarningSound(false);
+    }
 }
 
 export async function setupImageTrackingData() {
-    
     const imageTrackables = [];
     for (const item of targetImagesData) {
         const imageBitmap = await createXRImageBitmap(item.url);
@@ -34,7 +31,7 @@ export async function setupImageTrackingData() {
             imageBitmap: imageBitmap,
             imageWidth: item.imageWidth,
             imageHeight: item.imageHeight,
-            isAlreadyTracked:  item.isAlreadyTracked
+            isAlreadyTracked: item.isAlreadyTracked
         };
         imageTrackables.push(newItem);
     }
@@ -42,130 +39,81 @@ export async function setupImageTrackingData() {
 }
 
 export async function createXRImageBitmap(url) {
-    try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = url;
-        await img.decode();    
-        const bitmap = await createImageBitmap(img);
-        return bitmap;
-    } catch (error) {
-        console.error("Failed to create ImageBitmap from", url, error);
-        throw error;
-    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = url;
+    await img.decode();
+
+    // Generate bitmap and clean up the original image to free resources
+    const bitmap = await createImageBitmap(img);
+    img.remove();
+    return bitmap;
 }
 
-export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userPosition) {
+export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userPosition, roomSpatialAudio) {
     const pose = frame.getViewerPose(referenceSpace);
     if (!pose) {
         console.log("No viewer pose found.");
-
-        // Hide all meshes if tracking data is unavailable
         trackedImages.forEach(trackedImageIndex => {
             TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
-            trackedImageIndex.isAlreadyTracked = false; // Reset tracking flag
+            trackedImageIndex.isAlreadyTracked = false;
         });
         return;
     }
 
     const results = frame.getImageTrackingResults();
-
-    trackedImages.forEach((trackedImageIndex) => {
+    trackedImages.forEach(trackedImageIndex => {
         const result = results.find(r => r.index === trackedImageIndex.index);
-
-        const imagePose = result && result.trackingState === 'tracked' 
-            ? frame.getPose(result.imageSpace, referenceSpace) 
-            : null;
-
+        const imagePose = result && result.trackingState === 'tracked' ? frame.getPose(result.imageSpace, referenceSpace) : null;
         const isVisible = imagePose !== null;
 
         if (isVisible && !trackedImageIndex.isAlreadyTracked) {
-            // Only update position once when the object is first tracked
             TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible);
             trackedImageIndex.isAlreadyTracked = true;
         }
 
-        if (isVisible && imagePose)
-        {
-            FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name);
+        if (isVisible && imagePose) {
+            FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name, roomSpatialAudio);
         }
-
     });
 }
 
 function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
-
-    if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) {
-        return;
-    }
+    if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) return;
 
     if (isVisible && imagePose) {
-
-        const { imageWidth , imageHeight} = trackedImageIndex;
         const position = imagePose.transform.position;
 
-        // First mesh Position 
-        const firstMesh = trackedImageIndex.meshes[0];
-
-        if (firstMesh) {
-            firstMesh.mesh.position.set(
-                position.x + firstMesh.position.x,        
-                position.y + firstMesh.position.y,             
-                position.z + firstMesh.position.z
+        trackedImageIndex.meshes.forEach(meshData => {
+            meshData.mesh.position.set(
+                position.x + meshData.position.x,
+                position.y + meshData.position.y,
+                position.z + meshData.position.z
             );
-            firstMesh.mesh.visible = true;
-        }
-
-        // Second mesh Position 
-        const SecondMesh = trackedImageIndex.meshes[1];
-        if (SecondMesh) {
-            SecondMesh.mesh.position.set(
-                position.x + SecondMesh.position.x,        
-                position.y + SecondMesh.position.y,             
-                position.z + SecondMesh.position.z
-            );
-            SecondMesh.mesh.visible = true;
-        }
-
+            meshData.mesh.visible = true;
+        });
     } else {
-
-        trackedImageIndex.meshes.forEach(item => {
-            item.mesh.visible = false;
+        trackedImageIndex.meshes.forEach(meshData => {
+            meshData.mesh.visible = false;
         });
     }
 }
 
-
-export function IsCameraFacing (camera, target_Object, location)
-{
-    //camera direction logic
+export function IsCameraFacing(camera, target_Object, location) {
     const cameraDirection = camera.getWorldDirection(location);
-    const meshPosition =   target_Object.position;
-    const cameraPosition = camera.position;
-    const directionToMesh = meshPosition.clone().sub(cameraPosition).normalize();
-    const dotProduct = cameraDirection.dot(directionToMesh);
-
-    if (dotProduct > 0.9) {
-        return true;
-    } else {
-        return false;
-    }
+    const directionToMesh = target_Object.position.clone().sub(camera.position).normalize();
+    return cameraDirection.dot(directionToMesh) > 0.9;
 }
-
 
 export function toggleWarning(objectName, visibility) {
     const warningDiv = document.getElementById("Warrning");
+    if (!warningDiv) return;
+
     const warningText = warningDiv.querySelector("h2");
-
-    // Update the text in the h2 tag with the provided object name
-    warningText.textContent = `Please keep a safe distance from the ${objectName}. Thank you!`;
-
-    // Set visibility based on the boolean value
-    if (visibility) {
-        warningDiv.style.display = "block"; // Show the div
-    } else {
-        warningDiv.style.display = "none"; // Hide the div
+    if (warningText) {
+        warningText.textContent = `Please keep a safe distance from the ${objectName}. Thank you!`;
     }
+    warningDiv.style.display = visibility ? "block" : "none";
 }
 
 export function hideElementsWithMetadata() {
@@ -183,7 +131,6 @@ export async function checkSupport() {
             return false;
         }
         return true;
-
     } catch (error) {
         console.error("An error occurred:", error);
         return false;

@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-
 
 
 export class SceneMeshes {
@@ -10,15 +8,13 @@ export class SceneMeshes {
 
     createObstacle() {
 
-        const geometry = new THREE.PlaneGeometry(0.5, 0.4);
-
-       // const videoTexture = new THREE.VideoTexture(video);
+        const geometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
 
         const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
 
         const obstacle = new THREE.Mesh(geometry, material);
         obstacle.name = 'obsracle';
-        obstacle.position.set(0, 0, -1.5);
+        obstacle.position.set(0.5, 0, -1.5);
         return obstacle;
 
     }
@@ -103,14 +99,6 @@ export class SceneMeshes {
     async loadAndConfigureModelGLTF(url, id, position, scale, rotation) {
         try {
             const gltfLoader = new GLTFLoader();
-            const dracoLoader = new DRACOLoader();
-            
-            // Set the path to the Draco decoder files
-            dracoLoader.setDecoderPath('Statue/');  // Adjust this path as needed
-
-            dracoLoader.preload();
-
-            gltfLoader.setDRACOLoader(dracoLoader);
     
             // Load the model and wait for the Promise to resolve
             const gltf = await new Promise((resolve, reject) => {
@@ -147,9 +135,7 @@ export class SceneMeshes {
                     child.name = id;
                 }
             });
-    
-            // Clean up the DRACOLoader after loading
-            dracoLoader.dispose();
+   
     
             // Return model, mixer, position, and rotation
             return {

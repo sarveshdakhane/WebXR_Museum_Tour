@@ -1,21 +1,32 @@
 export async function createXRSession(trackedImages) {
     try {
+        // Define the required features, excluding 'image-tracking' if trackedImages is null
+        const requiredFeatures = ['dom-overlay'];
+        
+        // Only include 'image-tracking' if trackedImages is provided
+        if (trackedImages) {
+            requiredFeatures.push('image-tracking');
+        }
 
-        const requiredFeatures = ['dom-overlay', 'image-tracking'].filter(feature => {
-            return feature === 'dom-overlay' || feature === 'image-tracking';
-        });
+        // Set up XR tracked images only if trackedImages is not null
+        const xrTrackedImages = trackedImages
+            ? trackedImages.map(item => ({
+                image: item.imageBitmap,
+                widthInMeters: item.imageWidth,
+            }))
+            : [];
 
-        const xrTrackedImages = trackedImages.map(item => ({
-            image: item.imageBitmap,
-            widthInMeters: item.imageWidth, 
-
-        }));
-
-        const session = await navigator.xr.requestSession('immersive-ar', {
+        const sessionOptions = {
             requiredFeatures,
-            trackedImages: xrTrackedImages,
             domOverlay: { root: document.body }
-        });
+        };
+
+        // Add tracked images to the session options only if trackedImages is provided
+        if (trackedImages) {
+            sessionOptions.trackedImages = xrTrackedImages;
+        }
+
+        const session = await navigator.xr.requestSession('immersive-ar', sessionOptions);
 
         console.log("XR Session created.");
 
@@ -34,6 +45,7 @@ export async function createXRSession(trackedImages) {
         };
     }
 }
+
 
 export async function setupReferenceSpace(session) {
     try {

@@ -165,6 +165,15 @@ export class RoomSpatialAudio {
         this.updateVolume();
     }
 
+    updateListenerPositionSpatialRoom(camera, userPosition) {
+        this.listener.positionX.setValueAtTime(userPosition.x, this.audioContext.currentTime);
+        this.listener.positionY.setValueAtTime(userPosition.y, this.audioContext.currentTime);
+        this.listener.positionZ.setValueAtTime(userPosition.z, this.audioContext.currentTime);
+
+        this.updateListenerOrientation(camera);
+        this.updateSpatialAudioVolume();
+    }
+
     updateListenerOrientation(camera) {
         const cameraDirection = new THREE.Vector3();
         camera.getWorldDirection(cameraDirection);
@@ -221,6 +230,73 @@ export class RoomSpatialAudio {
         }
     }
 
+    updateSpatialAudioVolume() {
+        let closestAudioId = null;
+        let closestDistance = Infinity;
+    
+        // First pass to find the closest audio within the radius
+        Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
+            const { sourcePosition } = audioObj;
+            const distance = Math.sqrt(
+                Math.pow(this.listener.positionX.value - sourcePosition.x, 2) +
+                Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
+                Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
+            );
+    
+            // Update closest audio if this one is within the radius and nearer
+            if (distance < this.audioRadius && distance < closestDistance) {
+                closestDistance = distance;
+                closestAudioId = id;
+            }
+        });
+    
+        // Second pass to adjust volumes and playback based on proximity
+        Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
+            const { sourcePosition, gainNode, audioElement } = audioObj;
+            const distance = Math.sqrt(
+                Math.pow(this.listener.positionX.value - sourcePosition.x, 2) +
+                Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
+                Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
+            );
+    
+            // Initialize or use a flag to track if within radius
+            if (audioObj.isWithinRadius === undefined) {
+                audioObj.isWithinRadius = false;
+            }
+    
+            if (distance <= this.audioRadius) {
+                // User is within the radius
+                if (!audioObj.isWithinRadius) {
+                    // User has just entered the radius, reset and play
+                    audioElement.currentTime = 0;
+                    audioElement.play();
+                    audioObj.isWithinRadius = true; // Update state
+                }
+    
+                // Adjust volume
+                let volume;
+                if (id === closestAudioId) {
+                    const normalizedDistance = distance / this.audioRadius;
+                    volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
+                } else {
+                    volume = this.minVolume * 0.5; // Background volume for other audios
+                }
+                gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+    
+            } else {
+                // User is outside the radius
+                if (audioObj.isWithinRadius) {
+                    // User has just left the radius, pause and reset
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    audioObj.isWithinRadius = false; // Update state
+                }
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime); // Mute audio
+            }
+        });
+    }
+    
+    
     closeAllAudio() {
         Object.values(this.positionBasedAudios).forEach(audioObj => {
             audioObj.audioElement.pause();

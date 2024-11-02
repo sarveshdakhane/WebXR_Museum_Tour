@@ -8,5 +8,3 @@
                 sideMenu.style.left = '0px';
             }
         });
-
-

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { setupImageTrackingData, PlaceObjectsOnTarget, IsCameraFacing, logMessage, hideElementsWithMetadata, checkSupport } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { RoomSpatialAudio } from './SpatialAudio.js';
-import { generalMeshes } from './data.js';
+
 
 let session = null;
 let audioContext = null;
@@ -99,10 +99,14 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
 
     // Update spatial audio listener and place 3D objects
     PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData, userPosition, roomSpatialAudio);
-    roomSpatialAudio.updateListenerPosition(camera, userPosition);
-    PlayMeshAnimation();
 
-    logMessage("Camera is facing the mesh"); // Assume this runs only if debugging; consider removing in production
+    roomSpatialAudio.updateListenerPosition(camera, userPosition);
+
+    if (SelectedObjectAnimation) {
+         PlayMeshAnimation();
+    }
+
+   //logMessage("Camera is facing the mesh"); // Assume this runs only if debugging; consider removing in production
 
     renderer.render(scene, camera);
 }
@@ -124,10 +128,8 @@ async function onARButtonClick() {
 
 // Plays animation for the selected object
 function PlayMeshAnimation() {
-    if (SelectedObjectAnimation) {
-        const delta = clock.getDelta();
-        SelectedObjectAnimation.update(delta);
-    }
+    const delta = clock.getDelta();
+    SelectedObjectAnimation.update(delta);
 }
 
 // Handles object selection, with optimized resource management for audio and animation

@@ -1,5 +1,6 @@
 import { targetImagesData } from './data.js';
 
+let trackedTargetData = [];
 
 export function logMessage(message) {
     const logContainer = document.getElementById('logContainer');
@@ -51,13 +52,18 @@ export async function createXRImageBitmap(url) {
 }
 
 export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userPosition, roomSpatialAudio) {
+    
+    if(trackedTargetData)
+    {        
+        trackedTargetData.forEach(item => {    
+            FindSafeDistanceBetweenUserandExhibit(userPosition, item.position, item.name, roomSpatialAudio);
+        });
+    } 
+    
     const pose = frame.getViewerPose(referenceSpace);
+
     if (!pose) {
         console.log("No viewer pose found.");
-        trackedImages.forEach(trackedImageIndex => {
-            TrackedImageDataInUse(trackedImageIndex, null, false, userPosition);
-            trackedImageIndex.isAlreadyTracked = false;
-        });
         return;
     }
 
@@ -70,11 +76,22 @@ export function PlaceObjectsOnTarget(frame, referenceSpace, trackedImages, userP
         if (isVisible && !trackedImageIndex.isAlreadyTracked) {
             TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible);
             trackedImageIndex.isAlreadyTracked = true;
+
         }
 
         if (isVisible && imagePose) {
-            FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name, roomSpatialAudio);
+            const isIndexPresent = trackedTargetData.some(item => item.index === trackedImageIndex.index);
+            
+            if (!isIndexPresent) {
+                trackedTargetData.push({
+                    position: imagePose.transform.position,
+                    index: trackedImageIndex.index,
+                    name: trackedImageIndex.Name
+                });
+            }
+
         }
+
     });
 }
 
@@ -82,8 +99,7 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
     if (!trackedImageIndex.meshes || trackedImageIndex.meshes.length === 0) return;
 
     if (isVisible && imagePose) {
-        const position = imagePose.transform.position;
-
+        const position = imagePose.transform.position;        
         trackedImageIndex.meshes.forEach(meshData => {
             meshData.mesh.position.set(
                 position.x + meshData.position.x,

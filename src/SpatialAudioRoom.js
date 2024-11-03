@@ -71,6 +71,7 @@ function setupObjects(scene) {
 
     SpatialAudioObjects.forEach(item => {
      
+            item.mesh.visible = true;
             scene.add(item.mesh);
 
             roomSpatialAudio.addPositionBasedAudio(item.id, item.audioFile, {

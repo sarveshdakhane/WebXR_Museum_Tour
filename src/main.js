@@ -22,7 +22,6 @@ async function startXR()
 
     try {
         const { renderer, scene, camera, targetImagesData, referenceSpace } = await setupScene();
-        console.log("Scene initialized");
 
         renderer.xr.setAnimationLoop((time, frame) => {
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData);
@@ -95,6 +94,7 @@ function setupInteractableObjects(scene, targetImagesData) {
 
 // XR frame loop with efficient rendering
 function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData) {
+    
     const userPosition = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
     // Update spatial audio listener and place 3D objects
@@ -105,7 +105,6 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
     if (SelectedObjectAnimation) {
          PlayMeshAnimation();
     }
-
    //logMessage("Camera is facing the mesh"); // Assume this runs only if debugging; consider removing in production
 
     renderer.render(scene, camera);
@@ -156,13 +155,12 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
     if (data && data.clickable) {
         if (SelectedObject) {
             roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
-            SelectedObject = null; // Clear reference to allow garbage collection
+            SelectedObject = null;
         }
 
         SelectedObject = intersectedObject;
         SelectedObjectAnimation = data.Animation;
 
-        // Only add audio if it doesn’t already exist
         if (!roomSpatialAudio.positionBasedAudios[clickedObjectName]) {
             roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
                 x: intersectedObject.point.x,
@@ -178,6 +176,5 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
 function handleAudioEnd(audioId) {
     if (SelectedObject && SelectedObject.object.name === audioId) {
         SelectedObjectAnimation = null;
-        console.log(`Stopped animation for ${audioId}`);
     }
 }

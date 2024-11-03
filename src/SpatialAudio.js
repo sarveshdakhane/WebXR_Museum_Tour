@@ -233,10 +233,12 @@ export class RoomSpatialAudio {
     updateSpatialAudioVolume() {
         let closestAudioId = null;
         let closestDistance = Infinity;
+        const veryCloseThreshold = this.audioRadius * 0.3; // Define a "very close" threshold at 30% of the radius
     
         // First pass to find the closest audio within the radius
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
-            const { sourcePosition } = audioObj;
+            const { sourcePosition, audioElement} = audioObj;
+            audioElement.loop = true;
             const distance = Math.sqrt(
                 Math.pow(this.listener.positionX.value - sourcePosition.x, 2) +
                 Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
@@ -250,7 +252,10 @@ export class RoomSpatialAudio {
             }
         });
     
-        // Second pass to adjust volumes and playback based on proximity
+        // Determine if the listener is very close to the closest audio source
+        const isVeryCloseToClosest = closestDistance <= veryCloseThreshold;
+    
+        // Second pass to adjust volumes for each audio based on proximity
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
             const { sourcePosition, gainNode, audioElement } = audioObj;
             const distance = Math.sqrt(
@@ -259,44 +264,37 @@ export class RoomSpatialAudio {
                 Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
             );
     
-            // Initialize or use a flag to track if within radius
-            if (audioObj.isWithinRadius === undefined) {
-                audioObj.isWithinRadius = false;
-            }
-    
             if (distance <= this.audioRadius) {
-                // User is within the radius
-                if (!audioObj.isWithinRadius) {
-                    // User has just entered the radius, reset and play
-                    audioElement.currentTime = 0;
+                // Play the audio if it is within the radius and was previously paused
+                if (!audioObj.isPlaying) {
+                    audioElement.currentTime = 0; // Optional: reset to start
                     audioElement.play();
-                    audioObj.isWithinRadius = true; // Update state
+                    audioObj.isPlaying = true;
                 }
     
-                // Adjust volume
-                let volume;
-                if (id === closestAudioId) {
-                    const normalizedDistance = distance / this.audioRadius;
-                    volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
-                } else {
-                    volume = this.minVolume * 0.5; // Background volume for other audios
+                // Calculate base volume based on distance
+                const normalizedDistance = distance / this.audioRadius;
+                let volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
+    
+                // Apply additional reduction if near another sound source
+                if (id !== closestAudioId && isVeryCloseToClosest) {
+                    volume *= 0.3; // Reduce other sounds to 30% of their calculated volume
                 }
+    
+                // Set the gain for this audio source
                 gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
     
             } else {
-                // User is outside the radius
-                if (audioObj.isWithinRadius) {
-                    // User has just left the radius, pause and reset
+                // Mute audio if outside the radius
+                if (audioObj.isPlaying) {
                     audioElement.pause();
-                    audioElement.currentTime = 0;
-                    audioObj.isWithinRadius = false; // Update state
+                    audioObj.isPlaying = false;
                 }
-                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime); // Mute audio
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
             }
         });
     }
-    
-    
+        
     closeAllAudio() {
         Object.values(this.positionBasedAudios).forEach(audioObj => {
             audioObj.audioElement.pause();

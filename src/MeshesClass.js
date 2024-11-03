@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export class SceneMeshes {
     constructor() {}
 
-    createObstacle() {
+    createObstacle(position) {
 
         const geometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
 
@@ -14,7 +14,7 @@ export class SceneMeshes {
 
         const obstacle = new THREE.Mesh(geometry, material);
         obstacle.name = 'obsracle';
-        obstacle.position.set(0.5, 0, -1.5);
+        obstacle.position.set(position.x, position.y, position.z);
         return obstacle;
 
     }
@@ -115,7 +115,7 @@ export class SceneMeshes {
     
             const model = gltf.scene;
             model.name = id;
-            model.position.set(position.x, position.y, position.z);
+           // model.position.set(position.x, position.y, position.z);
             model.scale.set(scale.x, scale.y, scale.z);
             model.rotation.set(rotation.x, rotation.y, rotation.z);
             model.visible = false;

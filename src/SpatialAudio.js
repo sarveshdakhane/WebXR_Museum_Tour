@@ -21,7 +21,7 @@ export class RoomSpatialAudio {
 
             // Initialize and play the warning sound if it doesn’t already exist
             if (!this.warningAudio) {
-                const warningAudioElement = new Audio('Audio/A2.mp3');
+                const warningAudioElement = new Audio('Audio/warning.mp3');
                 warningAudioElement.loop = true;
                 const track = this.audioContext.createMediaElementSource(warningAudioElement);
                 const gainNode = this.audioContext.createGain();
@@ -204,7 +204,12 @@ export class RoomSpatialAudio {
                 isUserNearAnyActivePositionAudio = true;
                 closestDistance = Math.min(closestDistance, distance);
                 const normalizedDistance = distance / this.audioRadius;
-                volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
+                
+                // Calculate volume within range and cap at maxVolume
+                volume = Math.max(
+                    this.minVolume,
+                    Math.min(this.maxVolume, this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2)))
+                );
             } else {
                 volume = 0;
                 audioElement.currentTime = 0;
@@ -219,12 +224,15 @@ export class RoomSpatialAudio {
 
         if (this.backgroundAudio) {
             let backgroundVolume;
-            const maxBackgroundVolume = 0.1;
+            const maxBackgroundVolume = 0.2;
             if (isUserNearAnyActivePositionAudio) {
                 const normalizedBackgroundVolume = 1 - (closestDistance / this.audioRadius);
-                backgroundVolume = normalizedBackgroundVolume * maxBackgroundVolume * 0.3;
+                backgroundVolume = Math.min(
+                    this.maxVolume,
+                    Math.max(this.minVolume, normalizedBackgroundVolume * maxBackgroundVolume * 0.3)
+                );
             } else {
-                backgroundVolume = 1;
+                backgroundVolume = this.maxVolume;
             }
             this.backgroundAudio.gainNode.gain.setValueAtTime(backgroundVolume, this.audioContext.currentTime);
         }
@@ -233,29 +241,25 @@ export class RoomSpatialAudio {
     updateSpatialAudioVolume() {
         let closestAudioId = null;
         let closestDistance = Infinity;
-        const veryCloseThreshold = this.audioRadius * 0.3; // Define a "very close" threshold at 30% of the radius
-    
-        // First pass to find the closest audio within the radius
+        const veryCloseThreshold = this.audioRadius * 0.3;
+
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
-            const { sourcePosition, audioElement} = audioObj;
+            const { sourcePosition, audioElement } = audioObj;
             audioElement.loop = true;
             const distance = Math.sqrt(
                 Math.pow(this.listener.positionX.value - sourcePosition.x, 2) +
                 Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
                 Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
             );
-    
-            // Update closest audio if this one is within the radius and nearer
+
             if (distance < this.audioRadius && distance < closestDistance) {
                 closestDistance = distance;
                 closestAudioId = id;
             }
         });
-    
-        // Determine if the listener is very close to the closest audio source
+
         const isVeryCloseToClosest = closestDistance <= veryCloseThreshold;
-    
-        // Second pass to adjust volumes for each audio based on proximity
+
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
             const { sourcePosition, gainNode, audioElement } = audioObj;
             const distance = Math.sqrt(
@@ -263,29 +267,27 @@ export class RoomSpatialAudio {
                 Math.pow(this.listener.positionY.value - sourcePosition.y, 2) +
                 Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
             );
-    
+
             if (distance <= this.audioRadius) {
-                // Play the audio if it is within the radius and was previously paused
                 if (!audioObj.isPlaying) {
-                    audioElement.currentTime = 0; // Optional: reset to start
+                    audioElement.currentTime = 0;
                     audioElement.play();
                     audioObj.isPlaying = true;
                 }
-    
-                // Calculate base volume based on distance
+
                 const normalizedDistance = distance / this.audioRadius;
                 let volume = this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2));
-    
-                // Apply additional reduction if near another sound source
+
                 if (id !== closestAudioId && isVeryCloseToClosest) {
-                    volume *= 0.3; // Reduce other sounds to 30% of their calculated volume
+                    volume *= 0.3;
                 }
-    
-                // Set the gain for this audio source
+
+                // Ensure volume is within min and max bounds
+                volume = Math.min(this.maxVolume, Math.max(this.minVolume, volume));
+
                 gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
-    
+
             } else {
-                // Mute audio if outside the radius
                 if (audioObj.isPlaying) {
                     audioElement.pause();
                     audioObj.isPlaying = false;

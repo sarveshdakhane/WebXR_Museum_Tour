@@ -57,7 +57,7 @@ async function setupScene() {
         // Audio setup with cleanup on close
         audioContext = new AudioContext();
         roomSpatialAudio = new RoomSpatialAudio(audioContext, 1.5, 0.6, 0.01, handleAudioEnd);
-        roomSpatialAudio.addBackgroundAudio('background', 'Audio/A.mp3');
+        roomSpatialAudio.addBackgroundAudio('background', 'Audio/baroque.mp3');
         roomSpatialAudio.toggleBackgroundAudio(true);
 
         // Interactable objects setup

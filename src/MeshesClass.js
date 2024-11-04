@@ -96,7 +96,7 @@ export class SceneMeshes {
         }
     }
 
-    async loadAndConfigureModelGLTF(url, id, position, scale, rotation) {
+    async loadAndConfigureModelGLTF(url, id, scale, rotation) {
         try {
             const gltfLoader = new GLTFLoader();
     
@@ -151,6 +151,60 @@ export class SceneMeshes {
         }
     }
     
+    async SpaialloadAndConfigureModelGLTF(url, id, position, scale, rotation) {
+        try {
+            const gltfLoader = new GLTFLoader();
+    
+            // Load the model and wait for the Promise to resolve
+            const gltf = await new Promise((resolve, reject) => {
+                gltfLoader.load(
+                    url,
+                    (gltf) => resolve(gltf),
+                    undefined,
+                    (error) => {
+                        console.error('Error loading GLTF model:', error);
+                        reject(error);
+                    }
+                );
+            });
+    
+            const model = gltf.scene;
+            model.name = id;
+            model.position.set(position.x, position.y, position.z);
+            model.scale.set(scale.x, scale.y, scale.z);
+            model.rotation.set(rotation.x, rotation.y, rotation.z);
+            model.visible = false;
+    
+            // Add an AnimationMixer for the model if it has animations
+            let mixer = null;
+            if (gltf.animations && gltf.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(model);
+                gltf.animations.forEach((clip) => {
+                    const action = mixer.clipAction(clip);
+                    action.play();
+                });
+            }
+    
+            // Traverse the model and look for a child named "abcd"
+            model.traverse((child) => {
+               
+            });
+    
+            // Return model, mixer, position, and rotation
+            return {
+                model,
+                mixer,
+                position: model.position.clone(),
+                rotation: model.rotation.clone()
+            };
+    
+        } catch (error) {
+            console.error('Error loading the GLTF model:', error);
+            throw error;
+        }
+    }
+    
+
     
     
 }

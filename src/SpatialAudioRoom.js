@@ -61,6 +61,7 @@ async function setupScene() {
         setupObjects(scene);
 
         return { renderer, scene, camera, referenceSpace };
+
     } catch (error) {
         console.error("An error occurred in setupScene:", error);
     }
@@ -70,16 +71,56 @@ async function setupScene() {
 function setupObjects(scene) {
 
     SpatialAudioObjects.forEach(item => {
+
      
-            item.mesh.visible = true;
-            scene.add(item.mesh);
+        item.mesh.visible = true;
+        scene.add(item.mesh);
+
+
+        item.mesh.traverse((child) => {
+
+            const worldPosition = new THREE.Vector3();
+
+            if (child.name === 'chariot') {
+
+                let chariot = child.getWorldPosition(worldPosition);
+   
+                roomSpatialAudio.addPositionBasedAudio('chariot', "Audio/A.mp3", {
+                x: chariot.x,
+                y: chariot.y,
+                z: chariot.z             
+            });      
+
+                roomSpatialAudio.togglePositionBasedAudio('chariot', true); 
+             }
+
+
+
+            if (child.name === 'Man') {
+
+                let Man = child.getWorldPosition(worldPosition);           
+
+            roomSpatialAudio.addPositionBasedAudio('Man', "Audio/A2.mp3", {
+                x: Man.x,
+                y: Man.y,
+                z: Man.z
+
+            });
+
+            roomSpatialAudio.togglePositionBasedAudio('Man', true); 
+        }
+
+           
+        });
+
+            
 
             roomSpatialAudio.addPositionBasedAudio(item.id, item.audioFile, {
                 x: item.mesh.position.x,
                 y: item.mesh.position.y,
                 z: item.mesh.position.z
             });
-            roomSpatialAudio.togglePositionBasedAudio(item.id, true);        
+            roomSpatialAudio.togglePositionBasedAudio(item.id, false);        
     });
 }
 
@@ -90,7 +131,6 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera) {
     
     //FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name, roomSpatialAudio);
     roomSpatialAudio.updateListenerPositionSpatialRoom(camera, userPosition);
-
 
     renderer.render(scene, camera);
 }

@@ -105,9 +105,9 @@ function TrackedImageDataInUse(trackedImageIndex, imagePose, isVisible) {
 
         trackedImageIndex.meshes.forEach(meshData => {
 
-            let X = position.x //+ meshData.position.x;
-            let Y = position.y ///+ meshData.position.y;
-            let Z = position.z //+ meshData.position.z;
+            let X = position.x + meshData.position.x;
+            let Y = position.y + meshData.position.y;
+            let Z = position.z + meshData.position.z;
 
             meshData.mesh.position.set(X,Y,Z);
 

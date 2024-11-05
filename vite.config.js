@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
   server: {
@@ -13,6 +14,12 @@ export default defineConfig({
     target: 'es2022'
   },
   build: {
-    target: 'es2022'
+    target: 'es2022',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        spatialroom: path.resolve(__dirname, 'spatial-room.html'),
+      }
+    }
   }
 });

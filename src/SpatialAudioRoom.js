@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import { setupImageTrackingData, PlaceObjectsOnTarget, IsCameraFacing, logMessage, hideElementsWithMetadata, checkSupport } from './Utility.js';
 import { createXRSession, setupReferenceSpace } from './XRSetup.js';
 import { RoomSpatialAudio } from './SpatialAudio.js';
-import { SpatialAudioObjects } from './data.js';
+import { SpatialAudioObjects } from './sdata.js';
 
 let session = null;
 let audioContext = null;
 let roomSpatialAudio = null;
+let SelectedObjectAnimation = null;
 
-const arButton = document.getElementById('arButton');
+const clock = new THREE.Clock();
+const arButton = document.getElementById('SarButton');
 
 // Event listener for AR button, with cleanup on reload
 arButton.addEventListener('click', onARButtonClick);
@@ -54,9 +56,9 @@ async function setupScene() {
 
         // Audio setup with cleanup on close
         audioContext = new AudioContext();
-        roomSpatialAudio = new RoomSpatialAudio(audioContext, 1.5, 0.6, 0.01, handleAudioEnd);
-       // roomSpatialAudio.addBackgroundAudio('background', 'Audio/A.mp3');
-       // roomSpatialAudio.toggleBackgroundAudio(true);
+        roomSpatialAudio = new RoomSpatialAudio(audioContext, 1, 0.6, 0.01, handleAudioEnd);
+        roomSpatialAudio.addBackgroundAudio('background', 'Audio/Mining.mp3');
+        roomSpatialAudio.toggleBackgroundAudio(false);
 
         setupObjects(scene);
 
@@ -85,7 +87,7 @@ function setupObjects(scene) {
 
                 let chariot = child.getWorldPosition(worldPosition);
    
-                roomSpatialAudio.addPositionBasedAudio('chariot', "Audio/A.mp3", {
+                roomSpatialAudio.addPositionBasedAudio('chariot',"Audio/chariot.mp3", {
                 x: chariot.x,
                 y: chariot.y,
                 z: chariot.z             
@@ -94,13 +96,29 @@ function setupObjects(scene) {
                 roomSpatialAudio.togglePositionBasedAudio('chariot', true); 
              }
 
+             if (child.name === "GOOGLE_SAT_WM") {
+
+                let city = child.getWorldPosition(worldPosition);
+   
+                roomSpatialAudio.addPositionBasedAudio('city',"Audio/CitySound.mp3", {
+                x: city.x,
+                y: city.y,
+                z: city.z             
+            });      
+
+                roomSpatialAudio.togglePositionBasedAudio('city', true); 
+             }
+
+             
+
+
 
 
             if (child.name === 'Man') {
 
                 let Man = child.getWorldPosition(worldPosition);           
 
-            roomSpatialAudio.addPositionBasedAudio('Man', "Audio/A2.mp3", {
+            roomSpatialAudio.addPositionBasedAudio('Man', "Audio/hammering.mp3", {
                 x: Man.x,
                 y: Man.y,
                 z: Man.z
@@ -109,7 +127,6 @@ function setupObjects(scene) {
 
             roomSpatialAudio.togglePositionBasedAudio('Man', true); 
         }
-
            
         });
 
@@ -120,7 +137,10 @@ function setupObjects(scene) {
                 y: item.mesh.position.y,
                 z: item.mesh.position.z
             });
-            roomSpatialAudio.togglePositionBasedAudio(item.id, false);        
+            roomSpatialAudio.togglePositionBasedAudio(item.id, false); 
+            SelectedObjectAnimation = item.Animation ;
+            
+            
     });
 }
 
@@ -131,6 +151,8 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera) {
     
     //FindSafeDistanceBetweenUserandExhibit(userPosition, imagePose.transform.position, trackedImageIndex.Name, roomSpatialAudio);
     roomSpatialAudio.updateListenerPositionSpatialRoom(camera, userPosition);
+
+    PlayMeshAnimation();
 
     renderer.render(scene, camera);
 }
@@ -154,4 +176,9 @@ function handleAudioEnd(audioId) {
 
         console.log(`Stopped animation for ${audioId}`);
 
+}
+
+function PlayMeshAnimation() {
+    const delta = clock.getDelta();
+    SelectedObjectAnimation.update(delta);
 }

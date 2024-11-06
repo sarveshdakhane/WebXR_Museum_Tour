@@ -57,8 +57,16 @@ async function setupScene() {
         // Audio setup with cleanup on close
         audioContext = new AudioContext();
         roomSpatialAudio = new RoomSpatialAudio(audioContext, 1.5, 0.6, 0.01, handleAudioEnd);
-        roomSpatialAudio.addBackgroundAudio('background', 'Audio/baroque.mp3');
-        roomSpatialAudio.toggleBackgroundAudio(true);
+        roomSpatialAudio.addPositionBasedAudio('background', 'Audio/baroque.mp3',
+
+            {
+                x: 0,
+                y: 0,
+                z: 1
+            }
+
+        );
+        roomSpatialAudio.togglePositionBasedAudio('background',true);
 
         // Interactable objects setup
         const interactablesObjects = setupInteractableObjects(scene, targetImagesData);
@@ -150,6 +158,9 @@ function onObjectClick(event, raycaster, camera, interactablesObjects) {
 // Optimized object selection, reusing objects and avoiding redundant audio creation
 function handleObjectSelection(intersectedObject, interactablesObjects) {
     const clickedObjectName = intersectedObject.object.name;
+
+    console.log("here clicked", clickedObjectName );
+
     const data = interactablesObjects.find(entry => entry.mesh.name === clickedObjectName);
 
     if (data && data.clickable) {

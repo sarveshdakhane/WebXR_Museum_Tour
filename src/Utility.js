@@ -11,7 +11,7 @@ export function logMessage(message) {
 }
 
 export function FindSafeDistanceBetweenUserandExhibit(userPosition, position, item, roomSpatialAudio){
-    const safeDistance = 0.8;
+    const safeDistance = 1;
     if (userPosition.distanceTo(position) < safeDistance) {
         toggleWarning(item, true);
         roomSpatialAudio.startWarningSound(true);
@@ -129,7 +129,7 @@ export function toggleWarning(objectName, visibility) {
 
     const warningText = warningDiv.querySelector("h2");
     if (warningText) {
-        warningText.textContent = `Please keep a safe distance from the ${objectName}. Thank you!`;
+        warningText.textContent = `Please keep a safe distance from the ${objectName} Art. Thank you!`;
     }
     warningDiv.style.display = visibility ? "block" : "none";
 }

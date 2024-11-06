@@ -34,7 +34,7 @@ const chariot_minier = await Meshes.SpaialloadAndConfigureModelGLTF(
 const mining = await Meshes.SpaialloadAndConfigureModelGLTF( 
   'Statue/abc.glb', 
   'mining', 
-  { x: 0.3, y: 0, z: -1.6},
+  { x: 0.0, y: 0, z: -2},
   { x: 0.01, y: 0.01, z: 0.01 },// scale
   { x: 0.0, y: 0.0, z: 0.0 }  // rotation
 );

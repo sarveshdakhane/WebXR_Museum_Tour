@@ -28,34 +28,17 @@ const BttnOccasio = Meshes.createButton("BttnOccasio");
 const targetImagesData = [
   { 
     index: 0, 
-    Name: "CimonParo",
+    Name: "GuideCimonandParo",
     url: 'Images/CimonParo.jpg',     
     imageWidth: 2.00, 
     imageHeight: 1.94,
     meshes: 
     [
-       { position: { x: -1.5, y: -1.7, z: 0.1}, mesh: GuideCimonandParo.model, clickable : true , Animation:GuideCimonandParo.mixer, audioFile: "Audio/GuideCimonParoAudio.mp3" },
+       { position: { x: -1.5, y: -1.7, z: 0.1}, mesh: GuideCimonandParo.model, clickable : true , Animation:GuideCimonandParo.mixer, audioFile: "Audio/GuideCimonParoAudio.mp3"},
        { position: { x: 0.4, y: -1.1, z: -0.3}, mesh: BookCimonandParo.model }
     ],
     isAlreadyTracked: false
   }
-
-  /*
-  ,
-  {
-    index: 1, 
-    Name: "ABC",
-    url: 'Images/Occasio.jpg',     
-    imageWidth: 0.597, 
-    imageHeight: 0.335,
-    meshes: 
-    [
-      { mesh: BttnOccasio, audioFile: "ac.mp3" }
-     // { mesh: MeshforOccasio.model, Animatio:MeshforOccasio.mixer , audioFile: "ad.mp3"}
-    ],
-    isAlreadyTracked: false
-  }
-    */
 ]; 
 
 

@@ -28,7 +28,19 @@ async function startXR()
     if (!(await checkSupport())) return;
 
     try {
+        if (!audioContext) {
+            audioContext = new AudioContext();
+        }
+
+        // Resume AudioContext if it is suspended
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
         const { renderer, scene, camera, targetImagesData, referenceSpace } = await setupScene();
+
+        // Start background audio after setup is complete
+        roomSpatialAudio.toggleBackgroundAudio(true);
 
         renderer.xr.setAnimationLoop((time, frame) => {
             onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetImagesData);
@@ -37,6 +49,7 @@ async function startXR()
         console.error("An error occurred:", error);
     }
 }
+
 
 async function setupScene() {
     try {
@@ -124,6 +137,11 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
 // Starts or stops AR, reloading page for cleanup
 async function onARButtonClick() {
     if (arButton.textContent === "Start AR") {
+        // Resume AudioContext if it exists and is suspended
+        if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
         hideElementsWithMetadata();
         await startXR();
         arButton.textContent = "Stop AR";
@@ -135,6 +153,7 @@ async function onARButtonClick() {
         location.reload(); // Full reload to clear up resources
     }
 }
+
 
 // Plays animation for the selected object
 function PlayMeshAnimation() {
@@ -159,16 +178,15 @@ function onObjectClick(event, raycaster, camera, interactablesObjects) {
 }
 
 // Optimized object selection, reusing objects and avoiding redundant audio creation
-function handleObjectSelection(intersectedObject, interactablesObjects) {
+async function handleObjectSelection(intersectedObject, interactablesObjects) {
     const clickedObjectName = intersectedObject.object.name;
-
-    console.log("here clicked", clickedObjectName );
+    console.log("here clicked", clickedObjectName);
 
     const data = interactablesObjects.find(entry => entry.mesh.name === clickedObjectName);
 
     if (data && data.clickable) {
         if (SelectedObject) {
-            roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
+           // roomSpatialAudio.togglePositionBasedAudio(SelectedObject.object.name, false);
             SelectedObject = null;
         }
 
@@ -176,11 +194,17 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
         SelectedObjectAnimation = data.Animation;
 
         if (!roomSpatialAudio.positionBasedAudios[clickedObjectName]) {
+            console.log("Adding audio for:", clickedObjectName);
             roomSpatialAudio.addPositionBasedAudio(clickedObjectName, data.audioFile, {
                 x: intersectedObject.point.x,
                 y: intersectedObject.point.y,
                 z: intersectedObject.point.z
             });
+
+            // Ensure audio setup completes before toggling playback
+            setTimeout(() => {
+                roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
+            }, 300); // Delay to ensure audio is set up
         }
 
         isOnCooldown = true;
@@ -195,6 +219,7 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
         roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
     }
 }
+
 
 // Handles ending audio and cleanup
 function handleAudioEnd(audioId) {

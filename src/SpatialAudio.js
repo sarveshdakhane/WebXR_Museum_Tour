@@ -13,10 +13,13 @@ export class RoomSpatialAudio {
         this.backgroundAudio = null;
         this.warningAudio = null;
     }
-    async startWarningSound(start) {
+
+    startWarningSound(start) {
         if (start) {
+            // Pause all other audio
             this.pauseAllSounds();
 
+            // Initialize and play the warning sound if it doesn’t already exist
             if (!this.warningAudio) {
                 const warningAudioElement = new Audio('Audio/warning.mp3');
                 warningAudioElement.loop = true;
@@ -24,34 +27,31 @@ export class RoomSpatialAudio {
                 const gainNode = this.audioContext.createGain();
                 track.connect(gainNode).connect(this.audioContext.destination);
 
+                // Store warning sound in the object for stopping later
                 this.warningAudio = { audioElement: warningAudioElement, gainNode };
             }
 
-            if (this.warningAudio.audioElement.paused) {
-                try {
-                    await this.warningAudio.audioElement.play();
-                } catch (error) {
-                    console.error('Error playing warning audio:', error);
-                }
-            }
+            this.warningAudio.audioElement.play();
         } else {
-            if (this.warningAudio && !this.warningAudio.audioElement.paused) {
+            if (this.warningAudio) {
                 this.warningAudio.audioElement.pause();
-                this.warningAudio.audioElement.currentTime = 0;
+                this.warningAudio.audioElement.currentTime = 0; // Reset to the beginning
             }
+
+            // Resume other sounds
             this.resumeAllSounds();
         }
     }
 
     pauseAllSounds() {
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
-            if (!audioObj.audioElement.paused) {
-                audioObj.audioElement.pause();
-                audioObj.audioElement.currentTime = 0;
-                audioObj.gainNode.disconnect();
-                audioObj.panner.disconnect();
-                audioObj.audioElement.remove();
-            }
+            audioObj.audioElement.pause();
+            audioObj.audioElement.currentTime = 0;
+            
+            // Remove audio from DOM and disconnect nodes for garbage collection
+            audioObj.gainNode.disconnect();
+            audioObj.panner.disconnect();
+            audioObj.audioElement.remove();
 
             delete this.positionBasedAudios[id];
 
@@ -60,16 +60,14 @@ export class RoomSpatialAudio {
             }
         });
 
-        if (this.backgroundAudio && !this.backgroundAudio.audioElement.paused) {
+        if (this.backgroundAudio) {
             this.backgroundAudio.audioElement.pause();
         }
     }
 
     resumeAllSounds() {
-        if (this.backgroundAudio && this.backgroundAudio.audioElement.paused) {
-            this.backgroundAudio.audioElement.play().catch(error => {
-                console.error("Error resuming background audio:", error);
-            });
+        if (this.backgroundAudio) {
+            this.backgroundAudio.audioElement.play();
         }
     }
 
@@ -116,62 +114,33 @@ export class RoomSpatialAudio {
         };
     }
 
-    async togglePositionBasedAudio(id, shouldPlay) {
+    togglePositionBasedAudio(id, shouldPlay) {
         const audioObj = this.positionBasedAudios[id];
-    
+
         if (!audioObj) {
             console.warn(`Audio with ID ${id} not found.`);
             return;
         }
-    
+
         if (shouldPlay) {
-            // Resume AudioContext if needed
-            if (this.audioContext.state === 'suspended') {
-                this.audioContext.resume().then(() => {
-                    this._playAudioElement(audioObj, id);
-                });
-            } else {
-                this._playAudioElement(audioObj, id);
-            }
+            audioObj.audioElement.play();
+            audioObj.audioElement.onended = () => {
+                if (this.onAudioEndCallback) {
+                    this.onAudioEndCallback(id);
+                }
+            };
         } else {
-            // Delay pause and cleanup
-            setTimeout(() => {
-                if (!audioObj.audioElement.paused) {
-                    audioObj.audioElement.pause();
-                    audioObj.audioElement.currentTime = 0;
-                }
-    
-                setTimeout(() => {
-                    audioObj.gainNode.disconnect();
-                    audioObj.panner.disconnect();
-                    audioObj.audioElement.remove();
-                    delete this.positionBasedAudios[id];
-                    console.log(`Audio with ID ${id} has been stopped and removed.`);
-                }, 100); // Delay cleanup slightly
-            }, 100); // Delay pause slightly
+            audioObj.audioElement.pause();
+            audioObj.audioElement.currentTime = 0;
+            
+            audioObj.gainNode.disconnect();
+            audioObj.panner.disconnect();
+            audioObj.audioElement.remove();
+
+            delete this.positionBasedAudios[id];
+            console.log(`Audio with ID ${id} has been stopped and removed.`);
         }
     }
-    
-    // Helper function to play audio and handle promise
-    _playAudioElement(audioObj, id) {
-        if (audioObj.audioElement.paused) {
-            audioObj.audioElement.play().then(() => {
-                console.log(`Audio with ID ${id} started playing.`);
-                audioObj.audioElement.onended = () => {
-                    if (this.onAudioEndCallback) {
-                        this.onAudioEndCallback(id);
-                    }
-                };
-            }).catch(error => {
-                if (error.name === 'AbortError') {
-                    console.warn(`Play request for audio ID ${id} was interrupted.`);
-                } else {
-                    console.error(`Playback failed for audio ID ${id}:`, error);
-                }
-            });
-        }
-    }
-    
 
     toggleBackgroundAudio(shouldPlay) {
         if (!this.backgroundAudio) {
@@ -180,16 +149,10 @@ export class RoomSpatialAudio {
         }
 
         if (shouldPlay) {
-            if (this.backgroundAudio.audioElement.paused) {
-                this.backgroundAudio.audioElement.play().catch(error => {
-                    console.error('Error playing background audio:', error);
-                });
-            }
+            this.backgroundAudio.audioElement.play();
         } else {
-            if (!this.backgroundAudio.audioElement.paused) {
-                this.backgroundAudio.audioElement.pause();
-                this.backgroundAudio.audioElement.currentTime = 0;
-            }
+            this.backgroundAudio.audioElement.pause();
+            this.backgroundAudio.audioElement.currentTime = 0;
         }
     }
 
@@ -223,7 +186,11 @@ export class RoomSpatialAudio {
         this.listener.upY.setValueAtTime(upVector.y, this.audioContext.currentTime);
         this.listener.upZ.setValueAtTime(upVector.z, this.audioContext.currentTime);
     }
+
     updateVolume() {
+        let isUserNearAnyActivePositionAudio = false;
+        let closestDistance = Infinity;
+
         Object.entries(this.positionBasedAudios).forEach(([id, audioObj]) => {
             const { sourcePosition, gainNode, audioElement } = audioObj;
             const distance = Math.sqrt(
@@ -232,26 +199,44 @@ export class RoomSpatialAudio {
                 Math.pow(this.listener.positionZ.value - sourcePosition.z, 2)
             );
 
-            let volume = (distance <= this.audioRadius && !audioElement.paused)
-                ? this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(distance / this.audioRadius, 2))
-                : 0;
-
-            if (volume === 0 && !audioElement.paused) {
-                audioElement.pause();
+            let volume;
+            if (distance <= this.audioRadius && !audioElement.paused) {
+                isUserNearAnyActivePositionAudio = true;
+                closestDistance = Math.min(closestDistance, distance);
+                const normalizedDistance = distance / this.audioRadius;
+                
+                // Calculate volume within range and cap at maxVolume
+                volume = Math.max(
+                    this.minVolume,
+                    Math.min(this.maxVolume, this.maxVolume - ((this.maxVolume - this.minVolume) * Math.pow(normalizedDistance, 2)))
+                );
+            } else {
+                volume = 0;
                 audioElement.currentTime = 0;
+                audioElement.pause();
+                if (this.onAudioEndCallback) {
+                    this.onAudioEndCallback(id);
+                }
             }
 
             gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
         });
 
         if (this.backgroundAudio) {
-            this.backgroundAudio.gainNode.gain.setValueAtTime(
-                this.maxVolume,
-                this.audioContext.currentTime
-            );
+            let backgroundVolume;
+            const maxBackgroundVolume = 0.2;
+            if (isUserNearAnyActivePositionAudio) {
+                const normalizedBackgroundVolume = 1 - (closestDistance / this.audioRadius);
+                backgroundVolume = Math.min(
+                    this.maxVolume,
+                    Math.max(this.minVolume, normalizedBackgroundVolume * maxBackgroundVolume * 0.3)
+                );
+            } else {
+                backgroundVolume = this.maxVolume;
+            }
+            this.backgroundAudio.gainNode.gain.setValueAtTime(backgroundVolume, this.audioContext.currentTime);
         }
     }
-
 
     updateSpatialAudioVolume() {
         let closestAudioId = null;

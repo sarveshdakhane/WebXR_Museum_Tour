@@ -16,6 +16,13 @@ const arButton = document.getElementById('arButton');
 // Event listener for AR button, with cleanup on reload
 arButton.addEventListener('click', onARButtonClick);
 
+
+//exper
+
+let isOnCooldown = false; 
+const cooldownDuration = 1000; 
+
+
 async function startXR() 
 {
     if (!(await checkSupport())) return;
@@ -56,16 +63,8 @@ async function setupScene() {
 
         // Audio setup with cleanup on close
         audioContext = new AudioContext();
-        roomSpatialAudio = new RoomSpatialAudio(audioContext, 1.5, 0.6, 0.01, handleAudioEnd);
-        roomSpatialAudio.addPositionBasedAudio('background', 'Audio/baroque.mp3',
-
-            {
-                x: 0,
-                y: 0,
-                z: 1
-            }
-
-        );
+        roomSpatialAudio = new RoomSpatialAudio(audioContext, 2, 0.6, 0.01, handleAudioEnd);
+        roomSpatialAudio.addPositionBasedAudio('background', 'Audio/baroque.mp3',{x: 0,y: 0, z: 1.5});
         roomSpatialAudio.togglePositionBasedAudio('background',true);
 
         // Interactable objects setup
@@ -108,11 +107,15 @@ function onXRFrame(time, frame, renderer, referenceSpace, scene, camera, targetI
     // Update spatial audio listener and place 3D objects
     PlaceObjectsOnTarget(frame, referenceSpace, targetImagesData, userPosition, roomSpatialAudio);
 
-    roomSpatialAudio.updateListenerPosition(camera, userPosition);
+    if (!isOnCooldown) {        
+        roomSpatialAudio.updateListenerPosition(camera, userPosition);
+    }
+
 
     if (SelectedObjectAnimation) {
          PlayMeshAnimation();
     }
+
    //logMessage("Camera is facing the mesh"); // Assume this runs only if debugging; consider removing in production
 
     renderer.render(scene, camera);
@@ -179,6 +182,16 @@ function handleObjectSelection(intersectedObject, interactablesObjects) {
                 z: intersectedObject.point.z
             });
         }
+
+        isOnCooldown = true;
+
+        // Start a timeout to reset the cooldown after the specified duration
+        setTimeout(() => {
+            isOnCooldown = false;
+            console.log("Cooldown ended, function re-enabled.");
+        }, cooldownDuration);
+
+
         roomSpatialAudio.togglePositionBasedAudio(clickedObjectName, true);
     }
 }

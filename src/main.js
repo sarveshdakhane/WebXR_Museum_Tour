@@ -80,6 +80,7 @@ async function setupScene() {
         roomSpatialAudio.addPositionBasedAudio('background', 'Audio/baroque.mp3',{x: 0,y: 0, z: 1.5});
         roomSpatialAudio.togglePositionBasedAudio('background',true);
 
+        
         // Interactable objects setup
         const interactablesObjects = setupInteractableObjects(scene, targetImagesData);
 

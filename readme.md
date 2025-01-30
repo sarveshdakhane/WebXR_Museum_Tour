@@ -227,25 +227,7 @@ Run the test suite using the following command:
 ```sh
 ❯ npm test
 ```
-
-
 ---
-##  Project Roadmap
-
-- [X] **`Task 1`**: <strike>Implement feature one.</strike>
-- [ ] **`Task 2`**: Implement feature two.
-- [ ] **`Task 3`**: Implement feature three.
-
----
-
-##  Contributing
-
-- **💬 [Join the Discussions](https://LOCAL///discussions)**: Share your insights, provide feedback, or ask questions.
-- **🐛 [Report Issues](https://LOCAL///issues)**: Submit bugs found or log feature requests for the `` project.
-- **💡 [Submit Pull Requests](https://LOCAL///blob/main/CONTRIBUTING.md)**: Review open PRs, and submit your own PRs.
-
-<details closed>
-<summary>Contributing Guidelines</summary>
 
 1. **Fork the Repository**: Start by forking the project repository to your LOCAL account.
 2. **Clone Locally**: Clone the forked repository to your local machine using a git client.

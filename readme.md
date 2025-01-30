@@ -1,10 +1,7 @@
 <p align="center">
     <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" align="center" width="30%">
 </p>
-<p align="center"><h1 align="center"><code>❯ REPLACE-ME</code></h1></p>
-<p align="center">
-	<em><code>❯ REPLACE-ME</code></em>
-</p>
+<p align="center"><h1 align="center"><code>❯ WebXR Museum Tour</code></h1></p>
 <p align="center">
 	<!-- local repository, no metadata badges. --></p>
 <p align="center">Built with the tools and technologies:</p>
@@ -31,9 +28,7 @@
   - [ Installation](#-installation)
   - [ Usage](#-usage)
   - [ Testing](#-testing)
-- [ Contributing](#-contributing)
 - [ License](#-license)
-- [ Acknowledgments](#-acknowledgments)
 
 ---
 
@@ -266,11 +261,5 @@ Run the test suite using the following command:
 ##  License
 
 This project is protected under the [SELECT-A-LICENSE](https://choosealicense.com/licenses) License. For more details, refer to the [LICENSE](https://choosealicense.com/licenses/) file.
-
----
-
-##  Acknowledgments
-
-- List any resources, contributors, inspiration, etc. here.
 
 ---

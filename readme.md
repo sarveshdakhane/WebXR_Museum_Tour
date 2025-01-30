@@ -2,7 +2,7 @@
     <img src="/public/Images/User Study.jpg" align="center" width="60%">
 </p>
 
-<h1 align="center"><code>❞ WebXR Museum Tour</code></h1>
+<h1 align="center"><code> WebXR Museum Tour</code></h1>
 
 <p align="center">
     <!-- Local repository, no metadata badges. -->
